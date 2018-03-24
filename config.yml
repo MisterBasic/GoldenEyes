@@ -1,0 +1,33 @@
+plugin:
+  prefix: §8[§6GoldenEyes§8]§e
+  debug: false
+options:
+  kick: true
+  actionbar: true
+checks:
+  autoclicker:
+    enabled: true
+    maxcps: 15
+    maxcpskick: 30
+  reach:
+    enabled: true
+    maxdistance: 4
+  fastplace:
+    enabled: true
+    maxblocks: 15
+  fastbow:
+    enabled: true
+  waterwalk:
+    enabled: true
+  autosneak:
+    enabled: true
+  liquidinteract:
+    enabled: true
+  flight:
+    enabled: true
+  antikb:
+    enabled: true
+  xray:
+    enabled: true
+  speed:
+    enabled: false
