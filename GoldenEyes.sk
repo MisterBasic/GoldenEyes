@@ -479,7 +479,7 @@ function updatePluginData(a: int = 1):
 	set {CONFIG::checks.liquidinteract.enabled} to yml value "checks.liquidinteract.enabled" from file "plugins/GoldenEyes/config.yml"
 	set {CONFIG::checks.flight.enabled} to yml value "checks.flight.enabled" from file "plugins/GoldenEyes/config.yml"
 	set {CONFIG::checks.antikb.enabled} to yml value "checks.antikb.enabled" from file "plugins/GoldenEyes/config.yml"
-	set {CONFIG::checks.speed.enabled} yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::checks.speed.enabled} to yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml"
 #function auraCheck(p: player):
 #	set {goldeneyes.citizen.%{_p}%} to "%random element of yml list ""auranames"" from file ""plugins/Config/yml""%"
 #	set {goldeneyes.citizen.%{_p}%} to a citzen with name {goldeneyes.citizen.%{_p}%} with entity type "PLAYER"
