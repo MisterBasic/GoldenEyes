@@ -1,9 +1,16 @@
 
 options:
+	# _________________________________
+	#
+	#            Plugin.yml
+	# _________________________________
 	name: GoldenEyes
 	author: MisterBasic
-	version: 1.3.3 [DEV VERSION]
+	version: 0.4
 	description: Stop cheaters from hacking on your server!
+	
+	# TempConfig
+	AppealWebsite: www.your-site.com
 
 	# Checks
 	autoclicker: 15
@@ -17,13 +24,12 @@ on enable:
 	set {CONFIG::debug} to yml value "plugin.debug" from file "plugins/GoldenEyes/config.yml"
 	set {CONFIG::options.kick} to yml value "options.kick" from file "plugins/GoldenEyes/config.yml"
 	set {CONFIG::options.actionbar} to yml value "options.actionbar" from file "plugins/GoldenEyes/config.yml"
-	if yml value "plugin.version" from file "plugins/GoldenEyes/config.yml" is not set:
+	if yml value "plugin.debug" from file "plugins/GoldenEyes/config.yml" is not set:
 		set yml value "plugin.prefix" from file "plugins/GoldenEyes/config.yml" to "&8[&6GoldenEyes&8]&e"
 		set yml value "plugin.debug" from file "plugins/GoldenEyes/config.yml" to false
 		set yml value "options.kick" from file "plugins/GoldenEyes/config.yml" to true
 		set yml value "options.actionbar" from file "plugins/GoldenEyes/config.yml" to true
 		set {CONFIG::prefix} to yml value "plugin.prefix" from file "plugins/GoldenEyes/config.yml"
-		set {CONFIG::version} to yml value "plugin.version" from file "plugins/GoldenEyes/config.yml"
 		set {CONFIG::debug} to yml value "plugin.debug" from file "plugins/GoldenEyes/config.yml"
 		set {CONFIG::options.kick} to yml value "options.kick" from file "plugins/GoldenEyes/config.yml"
 		# Configuration Checks (Values+Enabled)
@@ -40,6 +46,7 @@ on enable:
 		set yml value "checks.liquidinteract.enabled" from file "plugins/GoldenEyes/config.yml" to true
 		set yml value "checks.flight.enabled" from file "plugins/GoldenEyes/config.yml" to true
 		set yml value "checks.antikb.enabled" from file "plugins/GoldenEyes/config.yml" to true
+		set yml value "checks.xray.enabled" from file "plugins/GoldenEyes/config.yml" to false
 		set yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml" to false
 	updatePluginData()
 on disable:
@@ -65,6 +72,8 @@ on join:
 		set yml value "violations.%uuid of player%.flight" from file "plugins/GoldenEyes/playerdata.yml" to 0
 	if yml value "violations.%uuid of player%.antikb" from file "plugins/GoldenEyes/playerdata.yml" is not set:
 		set yml value "violations.%uuid of player%.antikb" from file "plugins/GoldenEyes/playerdata.yml" to 0
+	if yml value "violations.%uuid of player%.xray" from file "plugins/GoldenEyes/playerdata.yml" is not set:
+		set yml value "violations.%uuid of player%.xray" from file "plugins/GoldenEyes/playerdata.yml" to 0
 	if yml value "violations.%uuid of player%.speed" from file "plugins/GoldenEyes/playerdata.yml" is not set:
 		set yml value "violations.%uuid of player%.speed" from file "plugins/GoldenEyes/playerdata.yml" to 0
 	updatePlayerData(player)
@@ -74,7 +83,7 @@ every 2 minutes:
 # AutoClicker
 on left click:
 	{CONFIG::.checks.autoclicker.enabled} is true
-	#player does not have permission "goldeneyes.autoclicker.bypass"
+	player does not have permission "goldeneyes.autoclicker.bypass"
 	add 1 to {goldeneyes.cps::%player%}
 	if {goldeneyes.lastclick.%player%} is not set:
 		set {goldeneyes.lastclick.%player%} to now
@@ -93,7 +102,7 @@ every second:
 # FastBow
 on shoot:
 	{CONFIG::checks.fastbow.enabled} is true
-	#shooter does not have permission "goldeneyes.fastbow.bypass"
+	shooter does not have permission "goldeneyes.fastbow.bypass"
 	projectile is an arrow
 	if {goldeneyes.lastshot.%shooter%} is not set:
 		set {goldeneyes.lastshot.%shooter%} to now
@@ -106,10 +115,10 @@ on shoot:
 # Reach
 on damage:
 	{CONFIG::checks.reach.enabled} is true
-	#attacker does not have permission "goldeneyes.reach.bypass"
+	attacker does not have permission "goldeneyes.reach.bypass"
 	attacker is a player
 	attacker's gamemode is not creative or spectator
-	#victim is a player
+	victim is a player
 	damage cause is not a projectile, potion, thorns or explosion
 	if distance between attacker and victim is greater than {@reach}+attacker's ping/400:
 		add 1 to {goldeneyes.reach.%attacker%.vl}
@@ -126,7 +135,7 @@ on place:
 # Scaffold / Fastplace
 on place:
 	{CONFIG::checks.fastplace.enabled} is true
-	#player does not have permission "goldeneyes.fastplace.bypass"
+	player does not have permission "goldeneyes.fastplace.bypass"
 	add 1 to {goldeneyes.fastplace::%player%}
 	if {goldeneyes.lastplace::%player%} is not set:
 		set {goldeneyes.lastplace::%player%} to now
@@ -152,14 +161,15 @@ on chat:
 		log "%player% failed AutoSneak {Talked while sneaking} [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
 		alert("%player% failed AutoSneak [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)
 on inventory close:
+	# Little extra
+	clear {menu.%player%}
 	{CONFIG::checks.autosneak.enabled} is true
 	player does not have permission "goldeneyes.autosneak.bypass"
 	if player is sneaking:
 		add 1 to {CONFIG::violations.%uuid of player%.autosneak}
 		log "%player% failed AutoSneak {Closed inventory while sneaking} [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
 		alert("%player% failed AutoSneak [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)
-		# Little extra
-		clear {menu.%player%}
+		
 on inventory click:
 	{CONFIG::checks.autosneak.enabled} is true
 	player does not have permission "goldeneyes.autosneak.bypass"
@@ -181,28 +191,46 @@ on sprint toggle:
 		if player is sneaking:
 			add 1 to {CONFIG::violations.%uuid of player%.autosneak}
 			log "%player% failed AutoSneak {Toggled sprint whilst sneaking} [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
-			alert("%player% failed AutoSneak [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)		
+			alert("%player% failed AutoSneak [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)
 # X-ray Vision
-#on mine of diamond:
-#	add 1 to {goldeneyes.diamondsmined.%player%}
-#	if {goldeneyes.diamondsmined.%player%} is greater than 20:
-#		alert("%player% might be using Xray! [Diamonds Mined: %{goldeneyes.diamondsminded.%player%}%]")
-#		clear {goldeneyes.diamondsmined.%loop-player%}
-#on mine of gold:
-#	add 1 to {goldeneyes.goldmined.%player%}
-#	if {goldeneyes.goldmined.%player%} is greater than 20:
-#		alert("%player% might be using Xray! [Gold Mined: %{goldeneyes.goldminded.%player%}%]")
-#		clear {goldeneyes.goldmined.%loop-player%}
-#on mine of iron:
-#	add 1 to {goldeneyes.ironmined.%player%}
-#	if {goldeneyes.ironmined.%player%} is greater than 30:
-#		alert("%player% might be using Xray! [Iron Mined: %{goldeneyes.ironmined.%player%}%]")
-#		clear {goldeneyes.ironmined.%loop-player%}
-#every 30 minutes:
-#	loop all players:
-#		clear {goldeneyes.ironmined.%loop-player%}
-#		clear {goldeneyes.goldmined.%loop-player%}
-#		clear {goldeneyes.diamondsmined.%loop-player%}
+on mine:
+	event-block is diamond ore
+	{CONFIG::checks.xray.enabled} is true
+	player's gamemode is survival
+	player does not have permission "goldeneyes.xray.bypass"
+	add 1 to {goldeneyes.diamondsmined.%player%}
+	if {goldeneyes.diamondsmined.%player%} is greater than 20:
+		add 1 to {CONFIG::violations.%player%.xray}
+		updatePlayerData(player)
+		alert("%player% might be using Xray! [Diamonds Mined: %{goldeneyes.diamondsmined.%player%}%]", player)
+		clear {goldeneyes.diamondsmined.%player%}
+on mine:
+	event-block is gold ore
+	{CONFIG::checks.xray.enabled} is true
+	player's gamemode is survival
+	player does not have permission "goldeneyes.xray.bypass"
+	add 1 to {goldeneyes.goldmined.%player%}
+	if {goldeneyes.goldmined.%player%} is greater than 20:
+		add 1 to {CONFIG::violations.%player%.xray}
+		updatePlayerData(player)
+		alert("%player% might be using Xray! [Gold Mined: %{goldeneyes.goldminded.%player%}%]", player)
+		clear {goldeneyes.goldmined.%player%}
+on mine:
+	event-block is iron ore
+	{CONFIG::checks.xray.enabled} is true
+	player's gamemode is survival
+	player does not have permission "goldeneyes.xray.bypass"
+	add 1 to {goldeneyes.ironmined.%player%}
+	if {goldeneyes.ironmined.%player%} is greater than 30:
+		add 1 to {CONFIG::violations.%player%.xray}
+		updatePlayerData(player)
+		alert("%player% might be using Xray! [Iron Mined: %{goldeneyes.ironmined.%player%}%]", player)
+		clear {goldeneyes.ironmined.%player%}
+every 10 minutes:
+	loop all players:
+		clear {goldeneyes.ironmined.%loop-player%}
+		clear {goldeneyes.goldmined.%loop-player%}
+		clear {goldeneyes.diamondsmined.%loop-player%}
 
 # WaterWalk
 on walk on water:
@@ -283,13 +311,28 @@ on any movement:
 			add 1 to {CONFIG::violations.%uuid of player%.flight}
 			add 1 to {goldeneyes.move.%player%}
 			log "%player% failed Flight [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
-			alert("%player% failed Flight [VL %{CONFIG::violations.%uuid of player%.flight}%]", player)
+			alert("%player% failed Flight (ImpossibleMovement) [VL %{CONFIG::violations.%uuid of player%.flight}%]", player)
 			teleport the player to {_loc}
 			cancel event
 			if {goldeneyes.move.%player%} is greater than 5:
 				clear {goldeneyes.move.%player%}
 				gekick("Flight", player)
 	updatePlayerData(player)
+on packet:
+	if event-string is "PacketPlayInFlying":
+		ground state of event-player is false
+		set {_loc} to event-player's location
+		block at event-player is not ladder, vines or barrier
+		add 1 to {goldeneyes.flight.%player%}
+		if {goldeneyes.flight.%player%} >= 15:
+			wait a tick
+			add 1 to {CONFIG::violations.%uuid of player%.flight}
+			alert("%event-player% failed PacketFlight [VL %{CONFIG::violations.%uuid of player%.flight}%]", event-player)
+			
+			updatePlayerData(event-player)
+			clear {goldeneyes.flight.%player%}
+			wait 3 tick
+			teleport event-player to {_loc}
 # AntiKB
 on damage:	
 	{CONFIG::checks.antikb.enabled} is true
@@ -471,7 +514,7 @@ function alert(m: text, p: player):
 	loop all players:
 		loop-player has permission "goldeneyes.notify":
 			if {goldeneyes.notify::%loop-player%} is true:
-				send "%{CONFIG::prefix}% <tooltip:&c[Click to Teleport]><cmd:/tp %{_p}%>%{_m}% (Ping: %{_p}'s ping%)" to loop-player
+				send "%{CONFIG::prefix}% <tooltip:&c&l&nClick to Teleport><cmd:/tp %{_p}%>%{_m}% (Ping: %{_p}'s ping%)" to loop-player
 	send "[GoldenEyesAntiCheat] %{_m}% (Ping: %{_p}'s ping%)" to console
 	updatePlayerData({_p})
 function staffMsg(m: text):
@@ -482,11 +525,22 @@ function staffMsg(m: text):
 	send "[GoldenEyesAntiCheat] %{_m}%" to console
 function gekick(m: text, p: player):
 	{CONFIG::options.kick} is true
-	kick {_p} due to "%{CONFIG::prefix}% You were disconnected from the server.%nl%%nl%ยง4Reason: %{_m}%%nl%%nl%ย7Please do not do this again!"
+	kick {_p} due to "%{CONFIG::prefix}% You were disconnected from the server.%nl%%nl%&4Reason: %{_m}%%nl%%nl%&7Please do not do this again!"
 	send "[GoldenEyesAntiCheat] %{_p}% was kicked from the server. Reason: %{_m}%" to console
 	loop all players:
 		if loop-player has permission "goldeneyes.notify" or "goldeneyes.notify.kick":
 			send "%{CONFIG::prefix}% %{_p}% was kicked from the server. Reason: %{_m}%" to loop-player
+#function geban(m: text, p: player):
+#	{CONFIG::options.ban} is true
+#	kick {_p} due to "%{CONFIG::prefix}% You are now permanently suspended from this server.%nl%%nl%4Reason: %{_m}%%nl%%nl%7Please appeal at {@AppealWebsite}"
+#	add player to yml list "bans" from file "plugins/GoldenEyes/playerdata.yml"
+#	send "[GoldenEyesAntiCheat] %{_p}% was banned from the server. Reason: %{_m}%" to console
+#	loop all players:
+#		if loop-player has permission "goldeneyes.notify" or "goldeneyes.notify.kick":
+#			send "%{CONFIG::prefix}% %{_p}% was banned from the server. Reason: %{_m}%" to loop-player
+#function geunban(p: player):
+#	if yml list "bans" from file "plugins/GoldenEyes/playerdata.yml" contains {_p}:
+#		remove {_p} from yml list "bans" from file "plugins/GoldenEyes/playerdata.yml"
 function updatePlayerData(p: player):
 	set {_uuid} to uuid of {_p}
 	set yml value "violations.%uuid of {_p}%.autoclicker" from file "plugins/GoldenEyes/playerdata.yml" to {CONFIG::violations.%{_uuid}%.autoclicker}
@@ -498,6 +552,7 @@ function updatePlayerData(p: player):
 	set yml value "violations.%uuid of {_p}%.liquidinteract" from file "plugins/GoldenEyes/playerdata.yml" to {CONFIG::violations.%{_uuid}%.liquidinteract}
 	set yml value "violations.%uuid of {_p}%.flight" from file "plugins/GoldenEyes/playerdata.yml" to {CONFIG::violations.%{_uuid}%.flight} 
 	set yml value "violations.%uuid of {_p}%.antikb" from file "plugins/GoldenEyes/playerdata.yml" to {CONFIG::violations.%{_uuid}%.antikb}
+	set yml value "violations.%uuid of {_p}%.xray" from file "plugins/GoldenEyes/playerdata.yml" to {CONFIG::violations.%{_uuid}%.xray}
 	set yml value "violations.%uuid of {_p}%.speed" from file "plugins/GoldenEyes/playerdata.yml" to {CONFIG::violations.%{_uuid}%.speed}
 function updatePluginData(a: int = 1):
 	set {CONFIG::checks.autoclicker.enabled} to yml value "checks.autoclicker.enabled" from file "plugins/GoldenEyes/config.yml"
@@ -509,5 +564,7 @@ function updatePluginData(a: int = 1):
 	set {CONFIG::checks.liquidinteract.enabled} to yml value "checks.liquidinteract.enabled" from file "plugins/GoldenEyes/config.yml"
 	set {CONFIG::checks.flight.enabled} to yml value "checks.flight.enabled" from file "plugins/GoldenEyes/config.yml"
 	set {CONFIG::checks.antikb.enabled} to yml value "checks.antikb.enabled" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::checks.xray.enabled} to yml value "checks.xray.enabled" from file "plugins/GoldenEyes/config.yml"
 	set {CONFIG::checks.speed.enabled} to yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml"
 # End
+
