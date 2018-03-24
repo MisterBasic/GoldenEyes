@@ -1,8 +1,7 @@
 options:
 	name: GoldenEyes
 	author: MisterBasic
-	version: 1.3.1
-
+	version: 1.3.2 [DEV VERSION]
 
 	# Checks
 	autoclicker: 15
@@ -41,10 +40,6 @@ on load:
 		set yml value "checks.flight.enabled" from file "plugins/GoldenEyes/config.yml" to true
 		set yml value "checks.antikb.enabled" from file "plugins/GoldenEyes/config.yml" to true
 		set yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml" to false
-		add "wo123o0go13oet9q" to yml list "auranames" from file "plugins/GoldenEyes/config.yml"
-		add "i1pepmwqmwnrped_1" to yml list "auranames" from file "plugins/GoldenEyes/config.yml"
-		add "apodwnvp" to yml list "auranames" from file "plugins/GoldenEyes/config.yml"
-		add "ashat19aw2s31q5" to yml list "auranames" from file "plugins/GoldenEyes/config.yml"
 on join:
 	if player has permission "goldeneyes.joinmessage":
 		gecmd("version", player)
@@ -68,9 +63,11 @@ on join:
 		set yml value "violations.%uuid of player%.antikb" from file "plugins/GoldenEyes/playerdata.yml" to 0
 	if yml value "violations.%uuid of player%.speed" from file "plugins/GoldenEyes/playerdata.yml" is not set:
 		set yml value "violations.%uuid of player%.speed" from file "plugins/GoldenEyes/playerdata.yml" to 0
+	updatePluginData()
 	updatePlayerData(player)
 # AutoClicker
 on left click:
+	{CONFIG::.checks.autoclicker.enabled} is true
 	player does not have permission "goldeneyes.autoclicker.bypass"
 	add 1 to {goldeneyes.cps::%player%}
 	if {goldeneyes.lastclick.%player%} is not set:
@@ -90,6 +87,7 @@ every second:
 # Nuker
 # FastBow
 on shoot:
+	{CONFIG::checks.fastbow.enabled} is true
 	shooter does not have permission "goldeneyes.fastbow.bypass"
 	projectile is an arrow
 	if {goldeneyes.lastshot.%shooter%} is not set:
@@ -102,6 +100,7 @@ on shoot:
 		stop
 # Reach
 on damage:
+	{CONFIG::checks.reach.enabled} is true
 	attacker does not have permission "goldeneyes.reach.bypass"
 	attacker is a player
 	attacker's gamemode is not creative or spectator
@@ -114,12 +113,14 @@ on damage:
 		if {goldeneyes.reach.%attacker%} > 20:
 			gekick("Reach", attacker)
 on place:
+	{CONFIG::checks.reach.enabled} is true
 	player does not have permission "goldeneyes.reach.bypass"
 	player's gamemode is not creative
 	if distance between event-block and player is greater than 5:
 		gekick("Reach", player)
 # Scaffold / Fastplace
 on place:
+	{CONFIG::checks.fastplace.enabled} is true
 	player does not have permission "goldeneyes.fastplace.bypass"
 	add 1 to {goldeneyes.fastplace::%player%}
 	if {goldeneyes.lastplace::%player%} is not set:
@@ -139,12 +140,14 @@ on place:
 
 # AutoSneak
 on chat:
+	{CONFIG::checks.autosneak.enabled} is true
 	player does not have permission "goldeneyes.autosneak.bypass"
 	if player is sneaking:
 		add 1 to {CONFIG::violations.%uuid of player%.autosneak}
 		log "%player% failed AutoSneak {Talked while sneaking} [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
 		alert("%player% failed AutoSneak [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)
 on inventory close:
+	{CONFIG::checks.autosneak.enabled} is true
 	player does not have permission "goldeneyes.autosneak.bypass"
 	if player is sneaking:
 		add 1 to {CONFIG::violations.%uuid of player%.autosneak}
@@ -153,6 +156,7 @@ on inventory close:
 		# Little extra
 		clear {menu.%player%}
 on inventory click:
+	{CONFIG::checks.autosneak.enabled} is true
 	player does not have permission "goldeneyes.autosneak.bypass"
 	if player is sneaking:
 		add 1 to {CONFIG::violations.%uuid of player%.autosneak}
@@ -184,6 +188,7 @@ on inventory click:
 
 # WaterWalk
 on walk on water:
+	{CONFIG::checks.waterwalk.enabled} is true
 	set {_loc} to location of player
 	player does not have permission "goldeneyes.waterwalk.bypass"
 	set {_lilypad} to 0
@@ -215,25 +220,28 @@ on walk on water:
 		
 # Liquid Interact
 on right click on water or lava:
-
+	{CONFIG::checks.liquidinteract.enabled} is true
 	player does not have permission "goldeneyes.liquidinteract.bypass"
 	cancel event
 	add 1 to {CONFIG::violations.%uuid of player%.liquidinteract}
 	alert("%player% failed LiquidInteract [VL %{CONFIG::violations.%uuid of player%.liquidinteract}%]", player)
 on left click on water or lava:
-
+	{CONFIG::checks.liquidinteract.enabled} is true
 	player does not have permission "goldeneyes.liquidinteract.bypass"
 	cancel event
 	add 1 to {CONFIG::violations.%uuid of player%.liquidinteract}
 on block break:
+	{CONFIG::checks.liquidinteract.enabled} is true
 	player does not have permission "goldeneyes.liquidinteract.bypass"
 	if event-block is water or lava:
 		gekick("LiquidInteract", player)
 on block damage:
+	{CONFIG::checks.liquidinteract.enabled} is true
 	player does not have permission "goldeneyes.liquidinteract.bypass"
 	if event-block is water or lava:
 		gekick("LiquidInteract", player)
-on any movement:
+on any movement:	
+	{CONFIG::checks.flight.enabled} is true
 	# Flight
 	block below the player is air
 	block at the player is air
@@ -267,7 +275,8 @@ on any movement:
 				gekick("Flight", player)
 	updatePlayerData(player)
 # AntiKB
-on damage:
+on damage:	
+	{CONFIG::checks.antikb.enabled} is true
 	attacker is set
 	if damage cause is fall, fire, thorns or potion:
 		stop
@@ -460,8 +469,19 @@ function updatePlayerData(p: player):
 	set yml value "violations.%uuid of {_p}%.flight" from file "plugins/GoldenEyes/playerdata.yml" to {CONFIG::violations.%{_uuid}%.flight} 
 	set yml value "violations.%uuid of {_p}%.antikb" from file "plugins/GoldenEyes/playerdata.yml" to {CONFIG::violations.%{_uuid}%.antikb}
 	set yml value "violations.%uuid of {_p}%.speed" from file "plugins/GoldenEyes/playerdata.yml" to {CONFIG::violations.%{_uuid}%.speed}
+function updatePluginData(a: int = 1):
+	set {CONFIG::checks.autoclicker.enabled} to yml value "checks.autoclicker.enabled" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::checks.reach.enabled} to yml value "checks.reach.enabled" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::checks.fastplace.enabled} to yml value "checks.fastplace.enabled" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::checks.fastbow.enabled} to yml value "checks.fastbow.enabled" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::checks.waterwalk.enabled} to yml value "checks.waterwalk.enabled" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::checks.autosneak.enabled} to yml value "checks.autosneak.enabled" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::checks.liquidinteract.enabled} to yml value "checks.liquidinteract.enabled" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::checks.flight.enabled} to yml value "checks.flight.enabled" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::checks.antikb.enabled} to yml value "checks.antikb.enabled" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::checks.speed.enabled} yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml"
 #function auraCheck(p: player):
-#	set {goldeneyes.citizen.%{_p}%} to "%random element of yml list ""auranames"" of file ""plugins/Config/yml""%"
+#	set {goldeneyes.citizen.%{_p}%} to "%random element of yml list ""auranames"" from file ""plugins/Config/yml""%"
 #	set {goldeneyes.citizen.%{_p}%} to a citzen with name {goldeneyes.citizen.%{_p}%} with entity type "PLAYER"
 #	spawn {goldeneyes.citizen.%{_p}%} at {_p}'s location
 #	add 1 to {goldeneyes.citizen.%{_p}%}'s x coordinate
