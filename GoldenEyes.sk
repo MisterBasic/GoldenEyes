@@ -1,24 +1,36 @@
-
+# Made by MisterBasic
 options:
 	# _________________________________
 	#
 	#            Plugin.yml
 	# _________________________________
+
 	name: GoldenEyes
 	author: MisterBasic
-	version: 0.4
+	version: 0.4.1
 	description: Stop cheaters from hacking on your server!
 	
-	# TempConfig
-	AppealWebsite: www.your-site.com
+	# Websites
+	github: https://github.com/MisterBasic/GoldenEyes
+	version-pastebin: https://pastebin.com/raw/2tmJjAvs
 
 	# Checks
-	autoclicker: 15
-	autoclicker-kick: 30
-	reach: 4
-	fastplace: 20
+	autoclicker: 15              # Maximum CPS for alert
+	autoclicker-kick: 30         # Maximum CPS for kick
+	reach: 5                     # Maximum Reach for alert
+	fastplace: 20                # Maximum Blocks placed for alert
+	fastladder: 4                # Maximum CPS for alert
+
 on enable:
+	# AutoUpdater
+	if text from "{@version-pastebin}" is not "{@version}":
+		send "§1>§9>§b>" to console
+		send "[GoldenEyesAntiCheat] You are currently running an outdated version." to console
+		send "[GoldenEyesAntiCheat] Please update to a new version: https://www.spigotmc.org/resources/sk-goldeneyes-anticheat.54638/" to console
+		send "§1>§9>§b>" to console
+	# Console enable message
 	send "[{@name}] Enabling {@name} v{@version}" to console
+	# Configuration Manager
 	clear {CONFIG::*}
 	set {CONFIG::prefix} to yml value "plugin.prefix" from file "plugins/GoldenEyes/config.yml"
 	set {CONFIG::debug} to yml value "plugin.debug" from file "plugins/GoldenEyes/config.yml"
@@ -48,6 +60,7 @@ on enable:
 		set yml value "checks.antikb.enabled" from file "plugins/GoldenEyes/config.yml" to true
 		set yml value "checks.xray.enabled" from file "plugins/GoldenEyes/config.yml" to false
 		set yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml" to false
+		set yml value "checks.fastladder.enabled" from file "plugins/GoldenEyes/config.yml" to false
 	updatePluginData()
 on disable:
 	send "[{@name}] Disabling {@name} v{@version}" to console
@@ -76,10 +89,12 @@ on join:
 		set yml value "violations.%uuid of player%.xray" from file "plugins/GoldenEyes/playerdata.yml" to 0
 	if yml value "violations.%uuid of player%.speed" from file "plugins/GoldenEyes/playerdata.yml" is not set:
 		set yml value "violations.%uuid of player%.speed" from file "plugins/GoldenEyes/playerdata.yml" to 0
+	if yml value "violations.%uuid of player%.fastladder" from file "plugins/GoldenEyes/playerdata.yml" is not set:
+		set yml value "violations.%uuid of player%.fastladder" from file "plugins/GoldenEyes/playerdata.yml" to 0
 	updatePlayerData(player)
 every 2 minutes:
 	{CONFIG::options.actionbar} is true
-	send an actionbar with "%{CONFIG::prefix}% This server is protected by GoldenEyes AntiCheat!" to all players
+	send an actionbar with "%{CONFIG::prefix}% This server is protected by GoldenEyes AntiCheat!" to all players # From Skellett
 # AutoClicker
 on left click:
 	{CONFIG::.checks.autoclicker.enabled} is true
@@ -104,26 +119,41 @@ on shoot:
 	{CONFIG::checks.fastbow.enabled} is true
 	shooter does not have permission "goldeneyes.fastbow.bypass"
 	projectile is an arrow
-	if {goldeneyes.lastshot.%shooter%} is not set:
-		set {goldeneyes.lastshot.%shooter%} to now
-		stop
 	if {goldeneyes.lastshot.%shooter%} was less than 2 ticks ago:
 		set {goldeneyes.lastshot.%shooter%} to now
 		add 1 to {CONFIG::violations.%uuid of shooter%.fastbow}
 		alert("%shooter% failed FastBow [VL {CONFIG::violations.%uuid of shooter%.fastbow}]", shooter)
 		stop
+	set {goldeneyes.lastshot.%shooter%} to now
+# Fast Ladder
+on any movement:
+	{CONFIG::checks.fastladder.enabled}
+	player is not riding
+	player's flight mode is false
+	if block at the player is a ladder:
+		block below the player is a ladder:
+			block above the player is a ladder:
+				set {goldeneyes.laddery1.%player%} to y coord of player
+				set {_expected} to y coord of player + {@fastladder}
+				set {_loc} to location of player
+				wait 15 ticks
+				set {goldeneyes.laddery2.%player%} to y coord of player
+				if y coord of player is greater than {_expected}:
+					add 1 to {CONFIG::violations.%uuid of player%.fastladder}
+					alert("%player% failed FastLadder [VL %{CONFIG::violations.%uuid of player%.fastladder}%]", player)
+					teleport the player to {_loc}
+					stop
 # Reach
 on damage:
 	{CONFIG::checks.reach.enabled} is true
 	attacker does not have permission "goldeneyes.reach.bypass"
 	attacker is a player
 	attacker's gamemode is not creative or spectator
-	victim is a player
 	damage cause is not a projectile, potion, thorns or explosion
-	if distance between attacker and victim is greater than {@reach}+attacker's ping/400:
+	if distance between attacker and victim is greater than {@reach}:
 		add 1 to {goldeneyes.reach.%attacker%.vl}
 		add 1 to {goldeneyes.reach.%attacker%}
-		alert("%attacker% failed Reach [VL %{goldeneyes.reach.%attacker%.vl}%] (Distance: %distance between attacker and victim%/%{@reach}+attacker's ping/200% blocks)", attacker)
+		alert("%attacker% failed Reach (Distance: %distance between attacker and victim%/{@reach}) [VL %{goldeneyes.reach.%attacker%.vl}%]", attacker)
 		if {goldeneyes.reach.%attacker%} > 20:
 			gekick("Reach", attacker)
 on place:
@@ -152,7 +182,19 @@ on place:
 		alert("%player% failed FastPlace [VL %{CONFIG::violations.%uuid of player%.fastplace}%]", player)
 		stop
 
+# [----------------] #
+# [    FastEat     ] #
+# [----------------] #
+on consume:
+	#{CONFIG::checks.fasteat.enabled} is true
+	if {fasteat.%player%} is set:
+		if difference between {fasteat.%player%} and now < 0.1 seconds:
+			cancel event
+			send "[GoldenEyesAntiCheat] %player% failed FastEat (BETA)" to console
+		clear {fasteat.%player%}
+	set {fasteat.%player%} to now
 # AutoSneak
+
 on chat:
 	{CONFIG::checks.autosneak.enabled} is true
 	player does not have permission "goldeneyes.autosneak.bypass"
@@ -192,7 +234,7 @@ on sprint toggle:
 			add 1 to {CONFIG::violations.%uuid of player%.autosneak}
 			log "%player% failed AutoSneak {Toggled sprint whilst sneaking} [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
 			alert("%player% failed AutoSneak [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)
-# X-ray Vision
+# X-ray Vision [WARNING: This version of detection is still in development stages. I would advise NOT using this check.]
 on mine:
 	event-block is diamond ore
 	{CONFIG::checks.xray.enabled} is true
@@ -239,7 +281,7 @@ on walk on water:
 	player does not have permission "goldeneyes.waterwalk.bypass"
 	set {_lilypad} to 0
 	player is not flying
-	loop all blocks in radius 0.25 around player:
+	loop all blocks in radius 1 around player:
 		if loop-block is a lily pad:
 			add 1 to {_lilypad}
 	if {_lilypad} > 1:
@@ -291,7 +333,6 @@ on any movement:
 	block at the player is air
 	player is not flying
 	player is not riding
-	# This part here is really the check, if the player is on the ground and is in the air, it is impossible.
 	player is on ground
 	set {_blocks} to 0
 	set {_loc} to location of player
@@ -310,13 +351,13 @@ on any movement:
 			# Alerts
 			add 1 to {CONFIG::violations.%uuid of player%.flight}
 			add 1 to {goldeneyes.move.%player%}
-			log "%player% failed Flight [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
-			alert("%player% failed Flight (ImpossibleMovement) [VL %{CONFIG::violations.%uuid of player%.flight}%]", player)
+			log "%player% failed Flight (Based on Movements) [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
+			alert("%player% failed Flight (Movement) [VL %{CONFIG::violations.%uuid of player%.flight}%]", player)
 			teleport the player to {_loc}
 			cancel event
 			if {goldeneyes.move.%player%} is greater than 5:
 				clear {goldeneyes.move.%player%}
-				gekick("Flight", player)
+				gekick("Flight (Movement)", player)
 	updatePlayerData(player)
 on packet:
 	if event-string is "PacketPlayInFlying":
@@ -327,12 +368,25 @@ on packet:
 		if {goldeneyes.flight.%player%} >= 15:
 			wait a tick
 			add 1 to {CONFIG::violations.%uuid of player%.flight}
-			alert("%event-player% failed PacketFlight [VL %{CONFIG::violations.%uuid of player%.flight}%]", event-player)
+			log "%player% failed Flight (Based on Packets) [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
+			alert("%event-player% failed Flight (Packet) [VL %{CONFIG::violations.%uuid of player%.flight}%]", event-player)
 			
 			updatePlayerData(event-player)
 			clear {goldeneyes.flight.%player%}
-			wait 3 tick
+			wait 3 ticks
 			teleport event-player to {_loc}
+		else if {goldeneyes.flight.%player%} >= 100:
+			clear {goldeneyes.flight.%player%}
+			gekick("Flight (Packet)", player)
+# AntiAirWalk
+#on move on air:
+#	set {_y1} to player's altitude
+#	set {_loc} to player's location
+#	wait 10 ticks
+#	set {_y2} to player's altitude
+#	if difference between {_y1} and {_y2} < 0.1:
+#		teleport the player to {_loc}
+
 # AntiKB
 on damage:	
 	{CONFIG::checks.antikb.enabled} is true
@@ -375,6 +429,12 @@ every minute:
 		clear {goldeneyes.move.%loop-player%}
 		clear {goldeneyes.waterwalk.%loop-player%}
 		clear {goldeneyes.antikb.%loop-player%}
+		clear {goldeneyes.tmessages.%loop-player%}
+
+on command "/goldeneyes":
+	if player does not have permission "goldeneyes.command":
+		send "%sender% tried '/%full command%'" to console
+
 command /ping:
 	trigger:
 		send "&6Ping&e: %player's ping%"
@@ -404,42 +464,40 @@ command /goldeneyes [<text>] [<text>] [<text>]:
 				send "%{CONFIG::prefix}% &cPlease specify a boolean: /goldeneyes notify &4<true|false>&c!"
 		else if arg 1 is "reset":
 			if arg 3 contains "autoclicker":
-				clear {goldeneyes.autoclicker.%arg 2%.vl}
+				clear {CONFIG::violations.%uuid of arg 2 parsed as player%.autoclicker}
 				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for AutoClicker!" to sender
 			if arg 3 contains "fastplace":
-				clear {goldeneyes.fastplace.%arg 2%.vl}
+				clear {CONFIG::violations.%uuid of arg 2 parsed as player%.fastplace}
 				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for Fastplace!" to sender
 			if arg 3 contains "fastbreak":
-				clear {goldeneyes.nuker.%arg 2%.vl}
-				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for FastBreak!" to sender
+				clear {CONFIG::violations.%uuid of arg 2 parsed as player%.fastbreak}
+				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for FastBreak! <tooltip:&cThis is no longer in use.>&c&l(Deprecated)" to sender
 			if arg 3 contains "liquidinteract":
-				clear {goldeneyes.liquidinteract.%arg 2%.vl}
+				clear {CONFIG::violations.%uuid of arg 2 parsed as player%.liquidinteract}
 				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for LiquidInteract!" to sender
 			if arg 3 contains "waterwalk":
-				clear {goldeneyes.waterwalk.%arg 2%.vl}
+				clear {CONFIG::violations.%uuid of arg 2 parsed as player%.waterwalk}
 				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for WaterWalk!" to sender
 			if arg 3 contains "autosneak":
-				clear {goldeneyes.autosneak.%arg 2%.vl}
+				clear {CONFIG::violations.%uuid of arg 2 parsed as player%.autosneak}
 				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for AutoSneak!" to sender
 			if arg 3 contains "reach":
-				clear {goldeneyes.reach.%arg 2%.vl}
+				clear {CONFIG::violations.%uuid of arg 2 parsed as player%.fastbow}
 				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for Reach!" to sender
 			if arg 3 contains "flight":
-				clear {goldeneyes.move.%arg 2%.vl}
+				clear {CONFIG::violations.%uuid of arg 2 parsed as player%.flight}
 				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for Flight!" to sender
 			if arg 3 contains "antikb" or "antiknockback":
-				clear {goldeneyes.antikb.%arg 2%.vl}
+				clear {CONFIG::violations.%uuid of arg 2 parsed as player%.antikb}
 				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for AntiKnockback!" to sender
+			if arg 3 contains "fastbow" or "speedbow":
+				clear {CONFIG::violations.%uuid of arg 2 parsed as player%.fastbow}
+				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for FastBow!" to sender
+			if arg 3 contains "fastladder" or "speedladder":
+				clear {CONFIG::violations.%uuid of arg 2 parsed as player%.fastladder}
+				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations for FastLadder!" to sender
 			if arg 3 contains "*" or "all":
-				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations!" to sender
-				clear {goldeneyes.reach.%arg 2%.vl}
-				clear {goldeneyes.move.%arg 2%.vl}
-				clear {goldeneyes.autosneak.%arg 2%.vl}
-				clear {goldeneyes.waterwalk.%arg 2%.vl}
-				clear {goldeneyes.liquidinteract.%arg 2%.vl}
-				clear {goldeneyes.fastplace.%arg 2%.vl}
-				clear {goldeneyes.autoclicker.%arg 2%.vl}
-				clear {goldeneyes.antikb.%arg 2%.vl}
+				send "%{CONFIG::prefix}% Reset all of %arg 2%'s violations! <tooltip:&cThis is no longer in use.>&c&l(Deprecated)" to sender
 			updatePlayerData(arg 2 parsed as player)
 		else if arg 1 is "info":
 			if arg 2 is set:
@@ -458,17 +516,21 @@ command /goldeneyes [<text>] [<text>] [<text>]:
 					set {CONFIG::violations.%uuid of arg 2 parsed as player%.fastplace} to 0
 				if {CONFIG::violations.%uuid of arg 2 parsed as player%.autoclicker} is not set:
 					set {CONFIG::violations.%uuid of arg 2 parsed as player%.autoclicker} to 0
+				if {CONFIG::violations.%uuid of arg 2 parsed as player%.fastbow} is not set:
+					set {CONFIG::violations.%uuid of arg 2 parsed as player%.fastbow} to 0
 				
 				if {goldeneyes.antikb.%arg 2%.vl} is not set:
 					set {goldeneyes.antikb.%arg 2%.vl} to 0
 				format slot 4 of player with player head named "&6%arg 2%" with lore "&7Name: %display name of arg 2 parsed as player%||&7UUID: %uuid of arg 2 parsed as player%" to be unstealable
-				format slot 10 of player with red stained glass named "&4Reach/Killaura (%{CONFIG::violations.%uuid of arg 2 parsed as player%.reach}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% Reach"]
-				format slot 11 of player with red stained glass named "&4WaterWalk (%{CONFIG::violations.%uuid of arg 2 parsed as player%.waterwalk}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% WaterWalk"]
-				format slot 12 of player with red stained glass named "&4AntiKB (%{CONFIG::violations.%uuid of arg 2 parsed as player%.antikb}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% AntiKB"]
-				format slot 13 of player with red stained glass named "&4AutoSneak (%{CONFIG::violations.%uuid of arg 2 parsed as player%.autosneak}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% AutoSneak"]	
-				format slot 14 of player with red stained glass named "&4FastPlace (%{CONFIG::violations.%uuid of arg 2 parsed as player%.noslow}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% FastPlace"]
-				format slot 15 of player with red stained glass named "&4LiquidInteract (%{CONFIG::violations.%uuid of arg 2 parsed as player%.liquidinteract}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% LiquidInteract"]
-				format slot 16 of player with red stained glass named "&4Flight (%{CONFIG::violations.%uuid of arg 2 parsed as player%.flight}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% Flight"]
+				format slot 9 of player with red stained glass named "&4Reach/Killaura (%{CONFIG::violations.%uuid of arg 2 parsed as player%.reach}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% Reach"]
+				format slot 10 of player with red stained glass named "&4WaterWalk (%{CONFIG::violations.%uuid of arg 2 parsed as player%.waterwalk}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% WaterWalk"]
+				format slot 11 of player with red stained glass named "&4AntiKB (%{CONFIG::violations.%uuid of arg 2 parsed as player%.antikb}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% AntiKB"]
+				format slot 12 of player with red stained glass named "&4AutoSneak (%{CONFIG::violations.%uuid of arg 2 parsed as player%.autosneak}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% AutoSneak"]	
+				format slot 13 of player with red stained glass named "&4FastPlace/Scaffold (%{CONFIG::violations.%uuid of arg 2 parsed as player%.fastplace}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% FastPlace"]
+				format slot 14 of player with red stained glass named "&4LiquidInteract (%{CONFIG::violations.%uuid of arg 2 parsed as player%.liquidinteract}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% LiquidInteract"]
+				format slot 15 of player with red stained glass named "&4Flight (%{CONFIG::violations.%uuid of arg 2 parsed as player%.flight}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% Flight"]
+				format slot 16 of player with red stained glass named "&4Fastbow (%{CONFIG::violations.%uuid of arg 2 parsed as player%.fastbow}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% FastBow"]
+				format slot 17 of player with red stained glass named "&4AutoClicker (%{CONFIG::violations.%uuid of arg 2 parsed as player%.autoclicker}%)" with lore "&c&lClick to reset violations" to run [make player execute "/goldeneyes reset %arg 2% AutoClicker"]
 				set {menu.%player%} to true
 		else if arg 1 is "console":
 			if sender is console:
@@ -477,40 +539,62 @@ command /goldeneyes [<text>] [<text>] [<text>]:
 				if arg 2 is "reload":
 					make console execute "/sk reload %script name%.sk"
 					send "&8[&6GoldenEyesAntiCheat&8]&e Fully reloaded {@name} v{@version}!" to sender
+				if arg 2 is "github":
+					send "&8-=-=-=-=-=-=-=-=-=-=-" to console
+					send "%nl%&6You can get snapshots at:" to console
+					send "&e{@github} %nl%" to console
+					send "&8-=-=-=-=-=-=-=-=-=-=-" to console
+		else if arg 1 is "git" or "github":
+			send "&8-=-=-=-=-=-=-=-=-=-=-" to sender
+			send "%nl%&6You can get snapshots at:" to sender
+			send "&e<link:{@github}><tooltip:&c&n&lClick here to get snapshots>{@github} %nl%"
+			send "&8-=-=-=-=-=-=-=-=-=-=-" to sender
+		else if arg 1 is "about":
+			gecmd("about", player)
+		else if arg 1 is "teleport":
+			if arg 2 is set:
+				teleport sender to arg 2 parsed as player
 		else:
 			gecmd("unknowncmd", player)
 function gecmd(t: text, p: player):
 	if {_t} is "version":
-		send "%{CONFIG::prefix}% Running Version {@version} by {@author}" to {_p}
+		if text from "{@version-pastebin}" is not "{@version}":
+			send "%{CONFIG::prefix}% You are running an outdated version!" to {_p}
+			send "%{CONFIG::prefix}% Please update here: &l&n<link:https://www.spigotmc.org/resources/sk-goldeneyes-anticheat.54638/>Click here for spigot page." to {_p}
+		else:
+			send "%{CONFIG::prefix}% Running Version {@version} by {@author}" to {_p}
 	if {_t} is "checks":
 		send "%{CONFIG::prefix}% Avaliable Checks:%nl%AutoClicker, Reach/Killaura, FastBow, FastPlace/Scaffold, WaterWalk, LiquidInteract, AutoSneak, Flight, AntiKB" to {_p}
 	if {_t} is "reload":
 		make console execute "/sk reload %script name%.sk"
 		send "%{CONFIG::prefix}% <tooltip:&6{@version}>Fully reloaded {@name} v{@version}!" to {_p}
 	if {_t} is "unknowncmd":
-		send "%{CONFIG::prefix}% Invaild Argument. Usage: /goldeneyes (reload|checks|version|notify) [value]" to {_p}
+		send "%{CONFIG::prefix}% Invaild Argument. Use ""/goldeneyes help"" for help." to {_p}
 	if {_t} is "notify-true":
 		set {goldeneyes.notify::%{_p}%} to true
-		send "%{CONFIG::prefix}% Set notifications to True!" to {_p}
+		send "%{CONFIG::prefix}% Set notifications to on!" to {_p}
 	if {_t} is "notify-false":
 		set {goldeneyes.notify::%{_p}%} to false
-		send "%{CONFIG::prefix}% Set notifications to False!" to {_p}
+		send "%{CONFIG::prefix}% Set notifications to off!" to {_p}
 	if {_t} is "help":
 		send "&8[&a-=-&8]&7&m------&8[&6GoldenEyes&8]&7&m------&8[&a-=-&8]&r" to {_p}
-		send "&8[&a!&8]&6 /goldeneyes reload&e: Reload" to {_p}
-		send "&8[&a!&8]&6 /goldeneyes version&e: Get the version" to {_p}
-		send "&8[&a!&8]&6 /goldeneyes notify <true|false>&e: Toggle notifications" to {_p}
-		send "&8[&a!&8]&6 /goldeneyes checks&e: See the Cheat Checks" to {_p}
-		send "&8[&a!&8]&6 /goldeneyes help&e: Get Help" to {_p}
-		send "&8[&a!&8]&6 /goldeneyes info <player>&e: Get Info" to {_p}
-		send "&8[&a!&8]&6 /goldeneyes reset <player> <violations>&e: Reset Violations" to {_p}
+		send "&8[&a!&8]&6 <suggest command:/goldeneyes reload>/goldeneyes reload&e: Reload" to {_p}
+		send "&8[&a!&8]&6 <suggest command:/goldeneyes version>/goldeneyes version&e: Get the version" to {_p}
+		send "&8[&a!&8]&6 <suggest command:/goldeneyes notify (boolean)>/goldeneyes notify <true|false>&e: Toggle notifications" to {_p}
+		send "&8[&a!&8]&6 <suggest command:/goldeneyes checks>/goldeneyes checks&e: See the Cheat Checks" to {_p}
+		send "&8[&a!&8]&6 <suggest command:/goldeneyes help>/goldeneyes help&e: Get Help" to {_p}
+		send "&8[&a!&8]&6 <suggest command:/goldeneyes info (player)>/goldeneyes info <player>&e: Get Info" to {_p}
+		send "&8[&a!&8]&6 <suggest command:/goldeneyes reset (player) (violation)>/goldeneyes reset <player> <violations>&e: Reset Violations" to {_p}
+		send "&8[&a!&8]&6 <suggest command:/goldeneyes git>/goldeneyes (git[hub]|snapshots)" to {_p}
+		send "&8[&a!&8]&6 <suggest command:/goldeneyes about>/goldeneyes about" to {_p}
 		send "&8[&a-=-&8]&7&m------&8[&6GoldenEyes&8]&7&m------&8[&a-=-&8]&r" to {_p}
-	if {_t} is "info":
+	if {_t} is "about":
 		send "&6Name&e: {@name}" to {_p}
 		send "&6Author&e: {@author}" to {_p}
 		send "&6Version&e: {@version}" to {_p}
 		send "&6Description&e: {@description}" to {_p}
 function alert(m: text, p: player):
+	log "[GoldenEyesAntiCheat] %{_m}% (Ping: %{_p}'s ping%, IP: %{_p}'s ip%)" to "Goldeneyes/checks.log"
 	loop all players:
 		loop-player has permission "goldeneyes.notify":
 			if {goldeneyes.notify::%loop-player%} is true:
@@ -530,17 +614,6 @@ function gekick(m: text, p: player):
 	loop all players:
 		if loop-player has permission "goldeneyes.notify" or "goldeneyes.notify.kick":
 			send "%{CONFIG::prefix}% %{_p}% was kicked from the server. Reason: %{_m}%" to loop-player
-#function geban(m: text, p: player):
-#	{CONFIG::options.ban} is true
-#	kick {_p} due to "%{CONFIG::prefix}% You are now permanently suspended from this server.%nl%%nl%4Reason: %{_m}%%nl%%nl%7Please appeal at {@AppealWebsite}"
-#	add player to yml list "bans" from file "plugins/GoldenEyes/playerdata.yml"
-#	send "[GoldenEyesAntiCheat] %{_p}% was banned from the server. Reason: %{_m}%" to console
-#	loop all players:
-#		if loop-player has permission "goldeneyes.notify" or "goldeneyes.notify.kick":
-#			send "%{CONFIG::prefix}% %{_p}% was banned from the server. Reason: %{_m}%" to loop-player
-#function geunban(p: player):
-#	if yml list "bans" from file "plugins/GoldenEyes/playerdata.yml" contains {_p}:
-#		remove {_p} from yml list "bans" from file "plugins/GoldenEyes/playerdata.yml"
 function updatePlayerData(p: player):
 	set {_uuid} to uuid of {_p}
 	set yml value "violations.%uuid of {_p}%.autoclicker" from file "plugins/GoldenEyes/playerdata.yml" to {CONFIG::violations.%{_uuid}%.autoclicker}
@@ -567,4 +640,3 @@ function updatePluginData(a: int = 1):
 	set {CONFIG::checks.xray.enabled} to yml value "checks.xray.enabled" from file "plugins/GoldenEyes/config.yml"
 	set {CONFIG::checks.speed.enabled} to yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml"
 # End
-
