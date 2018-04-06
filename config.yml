@@ -28,6 +28,8 @@ checks:
   antikb:
     enabled: true
   xray:
-    enabled: true
-  speed:
+    enabled: false
+  speed: # Non existant
+    enabled: false
+  badpackets:
     enabled: false
