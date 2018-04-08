@@ -1,9 +1,13 @@
+# Created by MisterBasic, Do not redistribute! #
+
 plugin:
   prefix: §8[§6GoldenEyes§8]§e
+  config-version: 1
   debug: false
 options:
   kick: true
   actionbar: true
+  actionbar-message: §eThis server is protected by GoldenEyes AntiCheat
 checks:
   autoclicker:
     enabled: true
@@ -29,7 +33,25 @@ checks:
     enabled: true
   xray:
     enabled: false
-  speed: # Non existant
+  speed:
+    enabled: false
+  fastladder:
     enabled: false
   badpackets:
     enabled: false
+  antiVPN:
+    enabled: true
+    blockedhosts:
+    - EGIHostings
+    - EGIHosting
+    - anchorfree
+    - Netherlands
+    - Leaseweb
+    - M247
+    - PLI-AS
+    - Choopa
+    - HostUS
+    - NFORCE
+    - IOMART-AS
+    - WideOpenWest
+    - ARETI-AS
