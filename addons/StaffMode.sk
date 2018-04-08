@@ -1,8 +1,7 @@
 options:
 	version: 1.0
 	author: MisterBasic
-
-# Enable/Disable Handlers	
+	
 on enable:
 	send "[GoldenEyes-StaffMode] Enabling StaffMode v{@version}" to console
 on disable:
