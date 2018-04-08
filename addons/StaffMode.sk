@@ -17,3 +17,5 @@ command /staffmode [<text>]:
 		else:
 			toggleStaffMode(player)
 # End
+
+
