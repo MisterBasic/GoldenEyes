@@ -1,0 +1,20 @@
+options:
+	version: 1.0
+	author: MisterBasic
+
+# Enable/Disable Handlers	
+on enable:
+	send "[GoldenEyes-StaffMode] Enabling StaffMode v{@version}" to console
+on disable:
+	send "[GoldenEyes-StaffMode] Disabling StaffMode v{@version}" to console
+
+
+command /staffmode [<text>]:
+	permission: goldeneyes.staffmode
+	permission message: &cInsufficent Permission.
+	trigger:
+		if arg 1 is set:
+			setStaffMode(player, arg 1 parsed as boolean)
+		else:
+			toggleStaffMode(player)
+# End
