@@ -1,0 +1,39 @@
+# [-=-=-=-=-=-=-=-=-=-]
+# [     Violations    ]
+# [-=-=-=-=-=-=-=-=-=-]
+
+# Example: getViolations(player, "Reach")
+function getViolations(p: player, hack: string) :: integer:
+	set {_uuid} to uuid of {_p}
+	set {_return} to yml value "violations.%uuid of {_p}%.%{_hack}%" from file "plugins/GoldenEyes/config.yml"
+	set {CONFIG::violations.%{_uuid}%.%{_hack}%} to {_return}
+	return {_return}
+function addViolation(p: player, hack: string):
+	set {_uuid} to uuid of {_p}
+	add 1 to {CONFIG::violations.%{_uuid}%.%{_hack}%}
+# [-=-=-=-=-=-=-=-=-=-]
+# [     StaffMode     ]
+# [-=-=-=-=-=-=-=-=-=-]
+function isInStaffMode(p: player) :: boolean:
+	if {goldeneyes.staffmode.%{_p}%} is true:
+		return true
+	else:
+		return false
+function toggleStaffMode(p: player):
+	if isInStaffMode({_p}):
+		set {goldeneyes.staffmode.%{_p}%} to false
+		reveal {_p} to all players
+		send "&eYou are no longer in StaffMode!" to {_p}
+	else:
+		set {goldeneyes.staffmode.%{_p}%} to true
+		hide {_p} from all players
+		send "&eYou are now in StaffMode!" to {_p}
+function setStaffMode(p: player, b: boolean):
+	if {_b}:
+		set {goldeneyes.staffmode.%{_p}%} to true
+		hide {_p} from all players
+		send "&eYou are now in StaffMode!" to {_p}
+	else:
+		set {goldeneyes.staffmode.%{_p}%} to false
+		reveal {_p} to all players
+		send "&eYou are no longer in StaffMode!" to {_p}
