@@ -2,32 +2,43 @@
 #
 # DO NOT REDISTRIBUTE WITHOUT MY PERMISSION!
 #
+# Dependencies:
+# 	- SkUtilities
+# 	- SkQuery
+# 	- Skellett
+#
+# Last Updated: 2018-04-08
 # Current amount of checks: 17
-
-# Start
-options: 
-	# _________________________________
-	#
-	#            Plugin.yml
-	# _________________________________
-
+options:
 	name: GoldenEyes
-	author: MisterBasic
-	version: 0.4.3 # replace with 4.3_DEV if you want to use developer versions
+	version: 4.4_DEV # replace with 4.3_DEV if you want to use developer versions
 	description: Stop cheaters from hacking on your server!
 	
 	# Websites
 	github: https://github.com/MisterBasic/GoldenEyes
-	version-pastebin: https://pastebin.com/raw/2tmJjAvs
+	version-pastebin: https://api.spigotmc.org/legacy/update.php?resource=54638/
 	devversion-pastebin: https://pastebin.com/raw/jbR5DcqP
 
 	# Checks
-	maxtimejoin: 30 seconds      # Time between when the player joins and when the anticheat will begin detected
-	autoclicker: 15              # Maximum CPS for alert
-	autoclicker-kick: 30         # Maximum CPS for kick
-	reach: 5                     # Maximum Reach for alert
-	fastplace: 20                # Maximum Blocks placed for alert
-	fastladder: 4                # Maximum CPS for alert
+
+	maxtimejoin: 30 seconds # Time between when the player joins and when the anticheat will begin detected
+
+	autoclicker: 15 # Maximum CPS for alert
+	autoclicker-kick: 30 # Maximum CPS for kick
+	reach: 5 # Maximum Reach for alert
+	fastplace: 20 # Maximum Blocks placed for alert
+	fastladder: 4 # Maximum CPS for alert
+
+
+
+
+
+
+
+
+
+
+
 on enable:
 	# AutoUpdater
 	autoUpdateHandler()
@@ -91,7 +102,8 @@ on enable:
 			add "WideOpenWest" to {_avl::*}
 			add "Choopa" to {_avl::*}
 			loop {_avl::*}:
-				add loop-value to yml list "checks.antiVPN.blockedhosts" from file "plugins/GoldenEyes/config.yml"
+				if yml list "checks.antiVPN.blockedhosts" from file "plugins/GoldenEyes/config.yml" does not contain loop-value:
+					add loop-value to yml list "checks.antiVPN.blockedhosts" from file "plugins/GoldenEyes/config.yml"
 	if dir "plugins/GoldenEyes/addons" doesn't exist:
 		create directory "plugins/GoldenEyes/addons"
 	updatePluginData()
@@ -99,50 +111,14 @@ on disable:
 	send "[{@name}] Disabling {@name} v{@version}" to console
 on first join:
 	set {goldeneyes.timeonline.%player%} to now
-	set yml value "violations.%uuid of player%.autoclicker" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	set yml value "violations.%uuid of player%.reach" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	set yml value "violations.%uuid of player%.fastplace" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	set yml value "violations.%uuid of player%.fastbow" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	set yml value "violations.%uuid of player%.waterwalk" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	set yml value "violations.%uuid of player%.autosneak" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	set yml value "violations.%uuid of player%.liquidinteract" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	set yml value "violations.%uuid of player%.flight" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	set yml value "violations.%uuid of player%.antikb" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	set yml value "violations.%uuid of player%.xray" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	set yml value "violations.%uuid of player%.speed" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	set yml value "violations.%uuid of player%.fastladder" from file "plugins/GoldenEyes/playerdata.yml" to 0
+	registerViolationsHandler(player)
 	updatePlayerData(player)
 on join:
 	player has played before
 	if player has permission "goldeneyes.joinmessage":
 		gecmd("version", player)	
 	set {goldeneyes.timeonline.%player%} to now
-	if yml value "violations.%uuid of player%.autoclicker" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.autoclicker" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.reach" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.reach" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.fastplace" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.fastplace" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.fastbow" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.fastbow" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.waterwalk" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.waterwalk" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.autosneak" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.autosneak" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.liquidinteract" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.liquidinteract" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.flight" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.flight" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.antikb" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.antikb" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.xray" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.xray" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.speed" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.speed" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.fastladder" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.fastladder" from file "plugins/GoldenEyes/playerdata.yml" to 0
-	if yml value "violations.%uuid of player%.badpackets" from file "plugins/GoldenEyes/playerdata.yml" is not set:
-		set yml value "violations.%uuid of player%.badpackets" from file "plugins/GoldenEyes/playerdata.yml" to 0
+	registerViolationsHandler(player)
 	updatePlayerData(player)
 on connect:
 	if isBanned(player):
@@ -152,6 +128,27 @@ on connect:
 			banHandler(player, "Temporarily")
 	if yml value "checks.antiVPN.enabled" from file "plugins/GoldenEyes/config.yml" is true:
 		antiVPNHandler(player)
+on disconnect:
+	clear {goldeneyes.updatetool.%player%}
+	clear {goldeneyes.lastfood.%player%}
+	clear {goldeneyes.lastfoodb.%player%}
+	clear {goldeneyes.timeonline.%player%}
+	clear {goldeneyes.lastclick.%player%}
+	clear {goldeneyes.updatetool.%player%}
+	clear {goldeneyes.cps::%player%}
+	clear {goldeneyes.lastshot.%player%}
+	clear {goldeneyes.changedtool.%player%}
+	clear {goldeneyes.lastdrop.%player%}
+	clear {goldeneyes.diamondsmined.%player%}
+	clear {goldeneyes.goldmined.%player%}
+	clear {goldeneyes.ironmined.%player%}
+	clear {goldeneyes.lastplace.%player%}
+	clear {goldeneyes.move.%player%}
+	clear {goldeneyes.waterwalk.%player%}
+	clear {goldeneyes.antikb.%player%}
+	clear {goldeneyes.nuker.%player%}
+	clear {goldeneyes.packets.%player%}
+	clear {goldeneyes.lastpacket.%player%}
 on respawn:
 	set {goldeneyes.timeonline.%player%} to now
 
@@ -180,6 +177,8 @@ on left click:
 		add 1 to {CONFIG::violations.%uuid of player%.autoclicker}
 		alert("%player% failed FastClick [VL %{goldeneyes.autoclicker.%player%.vl}%]", player)
 	updatePlayerData(player)
+	wait 1 second
+	remove 1 from {goldeneyes.cps::%player%}
 every second:
 	clear {goldeneyes.fastplace::*}
 	clear {goldeneyes.cps::*}
@@ -202,7 +201,7 @@ on shoot:
 # [    AutoTool    ] #
 # [----------------] #
 on tool change:
-	yml value "checks.autotool.enabled" from file "plugins/GoldenEyes/config.yml" is true
+	#yml value "checks.autotool.enabled" from file "plugins/GoldenEyes/config.yml" is true
 	set {goldeneyes.updatetool.%player%} to player's held item
 	wait 2 ticks
 	clear {goldeneyes.updatetool.%player%}
@@ -218,68 +217,26 @@ on left click:
 # [----------------] #
 on drop:
 	yml value "checks.inventorycleaner.enabled" from file "plugins/GoldenEyes/config.yml" is true
-	if difference between {goldeneyes.lastdrop.%player%} and now < 1 tick:
+	if difference between {goldeneyes.lastdrop.%player%} and now < 0.7 tick:
 		cancel event
 		alert("%player% failed InventoryCleaner", player)
 	set {goldeneyes.lastdrop.%player%} to now
 # [----------------] #
-# [   AutoBuild    ] #
-# [----------------] #
-
-# [----------------] #
-# [    SpeedHack   ] #
-# [----------------] #
-on any movement:
-	yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml" is true
-	
-	set {_expected} to player's walking speed + 3
-	
-	player is on ground
-	player is not flying
-	set {_pos1} to location of player
-	wait 5 ticks
-	set {_pos2} to location of player
-	if y coord of {_pos}-y coord of player <= 1:
-		if distance between {_pos} and player > {_expected}:
-			teleport player to {_pos}
-			alert("%player% failed Speed", player)
-# [----------------] #
-# [   FastLadder   ] #
-# [----------------] #
-
-on any move:
-	{CONFIG::checks.fastladder.enabled} is true
-	player is not riding
-	player's flight mode is false
-	if block at the player is a ladder:
-		block below the player is a ladder:
-			block above the player is a ladder:
-				set {goldeneyes.laddery1.%player%} to y coord of player
-				set {_expected} to y coord of player + {@fastladder}
-				set {_loc} to location of player
-				wait 15 ticks
-				set {goldeneyes.laddery2.%player%} to y coord of player
-				if y coord of player is greater than {_expected}:
-					add 1 to {CONFIG::violations.%uuid of player%.fastladder}
-					alert("%player% failed FastLadder [VL %{CONFIG::violations.%uuid of player%.fastladder}%]", player)
-					teleport the player to {_loc}
-					stop
-
-# [----------------] #
 # [      Reach     ] #
 # [----------------] #
-on damage:
+on damage of player:
 	{CONFIG::checks.reach.enabled} is true
 	attacker does not have permission "goldeneyes.reach.bypass"
 	attacker is a player
 	attacker's gamemode is not creative or spectator
 	damage cause is not a projectile, potion, thorns or explosion
 	if distance between attacker and victim is greater than {@reach}:
-		add 1 to {goldeneyes.reach.%attacker%.vl}
+		add 1 to {CONFIG::violations.%attacker%.reach}
 		add 1 to {goldeneyes.reach.%attacker%}
 		alert("%attacker% failed Reach (%distance between attacker and victim%/{@reach}) [VL %{goldeneyes.reach.%attacker%.vl}%]", attacker)
-		if {goldeneyes.reach.%attacker%} > {@reach} + 16:
+		if {goldeneyes.reach.%attacker%} > {@reach}:
 			gekick("Reach", attacker)
+		updatePlayerData(attacker)
 on place:
 	{CONFIG::checks.reach.enabled} is true
 	player does not have permission "goldeneyes.reach.bypass"
@@ -387,11 +344,20 @@ on mine:
 		updatePlayerData(player)
 		alert("%player% might be using Xray! [Iron Mined: %{goldeneyes.ironmined.%player%}%]", player)
 		clear {goldeneyes.ironmined.%player%}
+		
+# ANTI-XRAY!
 every 10 minutes:
 	loop all players:
 		clear {goldeneyes.ironmined.%loop-player%}
 		clear {goldeneyes.goldmined.%loop-player%}
 		clear {goldeneyes.diamondsmined.%loop-player%}
+		clear {goldeneyes.move.%loop-player%}
+		clear {goldeneyes.waterwalk.%loop-player%}
+		clear {goldeneyes.antikb.%loop-player%}
+		clear {goldeneyes.tmessages.%loop-player%}
+		clear {goldeneyes.nuker.%loop-player%}
+		clear {goldeneyes.packets.%loop-player%}
+		clear {goldeneyes.lastpacket.%loop-player%}
 
 # [----------------] #
 # [   WaterWalk    ] #
@@ -439,7 +405,7 @@ on packet recieve:
 						if block at the player is not water or lava:
 							if block above the player is not water or lava:
 								add 1 to {goldeneyes.waterwalk.%player%}
-								if {goldeneyes.waterwalk.%player%} > 15:
+								if {goldeneyes.waterwalk.%player%} > 5:
 									alert("%player% failed WaterWalk (Packet)", player)
 									clear {goldeneyes.waterwalk.%player%}
 
@@ -491,26 +457,32 @@ on any movement:
 			# Alerts
 			add 1 to {CONFIG::violations.%uuid of player%.flight}
 			add 1 to {goldeneyes.move.%player%}
-			log "%player% failed Flight (Based on Movements) [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
-			alert("%player% failed Flight (Movement) [VL %{CONFIG::violations.%uuid of player%.flight}%]", player)
-			teleport the player to {_loc}
-			cancel event
-			if {goldeneyes.move.%player%} is greater than 5:
+			if {goldeneyes.move.%player%} > 5:
+				alert("%player% failed Flight (Movement) [VL %{CONFIG::violations.%uuid of player%.flight}%]", player)
+				teleport the player to {_loc}
+				cancel event
+			if {goldeneyes.move.%player%} > 6:
 				clear {goldeneyes.move.%player%}
 				gekick("Flight (Movement)", player)
 	updatePlayerData(player)
+	wait 1 second
+	remove 1 from {goldeneyes.move.%player%}
+	
+# [----------------] #
+# [Movement Packets] #
+# [----------------] #
 on packet recieve:
 	if event-string is "PacketPlayInFlying":
 		ground state of event-player is false
-		player's gamemode is not creative or spectator
+		flight state of player is false
+		player's gamemode is not Creative or Spectator
 		set {_loc} to event-player's location
 		block at event-player is not ladder, vines or barrier
 		add 1 to {goldeneyes.flight.%player%}
 		if {goldeneyes.flight.%player%} >= 15:
 			wait a tick
 			add 1 to {CONFIG::violations.%uuid of player%.flight}
-			log "%player% failed NoFall/Flight (Based on Packets) [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
-			alert("%event-player% failed NoFall/Flight (Packet) [VL %{CONFIG::violations.%uuid of player%.flight}%]", event-player)
+			alert("%event-player% failed FlightPacket [VL %{CONFIG::violations.%uuid of player%.flight}%]", event-player)
 			
 			updatePlayerData(event-player)
 			clear {goldeneyes.flight.%player%}
@@ -520,26 +492,20 @@ on packet recieve:
 			clear {goldeneyes.flight.%player%}
 			gekick("Flight (Packet)", player)
 		stop
-on teleport:
-	set {goldeneyes.isteleporting.%player%} to true
-	wait 1 second
-	set {goldeneyes.isteleporting.%player%} to false
 
 # [----------------] #
 # [     AntiKB     ] #
 # [----------------] #
 
-on damage:	
+on damage of player:	
 	{CONFIG::checks.antikb.enabled} is true
-	attacker is set
 	if damage cause is fall, fire, thorns or potion:
 		stop
 	else:
 		set {_loc1} to location of victim
 		wait 7 ticks
-		set {_loc2} to location of victim
-		
-		
+		victim is not riding
+		victim is not flying
 		block west of victim is air
 		block east of victim is air
 		block north of victim is air
@@ -550,18 +516,14 @@ on damage:
 		block north of the block above the victim is air
 		block south of the block above the victim is air
 		block below the victim is not water or lava
-		
-		victim is not riding
-		victim is not flying
-		
 		if block at victim is not cobweb:
 			if victim's gamemode is not Creative or Spectator:
-				if distance between {_loc1} and {_loc2} < 0.1:
+				if distance between {_loc1} and victim < 0.1:
 					if victim's ping is less than 260:
-						{CONFIG::violations.%uuid of victim%.antikb}
+						add 1 to {CONFIG::violations.%uuid of victim%.antikb}
 						add 1 to {goldeneyes.antikb.%victim%}
-						log "%victim% failed AntiKnockback (Velocity: %distance between {_loc1} and {_loc2}%) [Ping: %victim's ping%, IP: %victim's ip%]" to "GoldenEyes/checks.log"
-						alert("%victim% failed AntiKnockBack (Velocity: %distance between {_loc1} and {_loc2}%) [VL %{CONFIG::violations.%uuid of victim%.antikb}%]", victim)
+						log "%victim% failed AntiKnockback [Ping: %victim's ping%, IP: %victim's ip%]" to "GoldenEyes/checks.log"
+						alert("%victim% failed AntiKnockBack [VL %{CONFIG::violations.%uuid of victim%.antikb}%]", victim)
 						if {goldeneyes.antikb.%victim%} >= 20:
 							clear {goldeneyes.antikb.%victim%}
 							gekick("Velocity / AntiKnockback", victim)
@@ -573,9 +535,8 @@ on damage:
 
 # Check movement packets sent in 1 second
 on packet recieve:
-	{CONFIG::checks.badpackets.enabled} is true
+	yml value "checks.badpackets.enabled" from file "plugins/GoldenEyes/config.yml" is true
 	event-string is "PacketPlayInPosition"
-	ground state of player is true
 	{goldeneyes.packetloc.%player%} is event-player's location
 	if {goldeneyes.lastpacket.%player%} is not set:
 		set {goldeneyes.lastpacket.%player%} to now
@@ -623,25 +584,30 @@ on block break:
 # [      Speed     ] #
 # [----------------] #
 
-# Code here
-#on any move:
-	#{CONFIG::checks.speed.enabled} is true
-	# CHECK HERE
-	
-# [----------------] #
-# [Variable Cleanup] #
-# [----------------] #
-
-every minute:
-	loop all players:
-		clear {goldeneyes.move.%loop-player%}
-		clear {goldeneyes.waterwalk.%loop-player%}
-		clear {goldeneyes.antikb.%loop-player%}
-		clear {goldeneyes.tmessages.%loop-player%}
-		clear {goldeneyes.nuker.%loop-player%}
-		clear {goldeneyes.packets.%loop-player%}
-		clear {goldeneyes.lastpacket.%loop-player%}
-
+on any movement:
+	yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml" is true
+	{teleporting.%player%} is false
+	player is not flying
+	block under the player is not ice or air
+	player's gamemode is not creative or spectator
+	player's ping is less than 270
+	if distance between {goldeneyes.speedlocation.%player%} and player >= 5:
+		if difference between {goldeneyes.lastspeedcheck.%player%} and now < 0.4 seconds:
+			add 1 to {CONFIG::violations.%uuid of player%.speed}
+			alert("%player% failed Speed [VL %{CONFIG::violations.%uuid of player%.speed}%]", player)
+			teleport player to {goldeneyes.speedlocation.%player%}
+			updatePlayerData(player)
+		player is on ground
+		set {goldeneyes.speedlocation.%player%} to location of player
+		set {goldeneyes.lastspeedcheck.%player%} to now
+	if {goldeneyes.speedlocation.%player%} is not set:
+		set {goldeneyes.speedlocation.%player%} to location of player
+		set {goldeneyes.lastspeedcheck.%player%} to now
+		stop
+on teleport:
+	set {teleporting.%player%} to true
+	wait 1 second
+	set {teleporting.%player%} to false
 # [----------------] #
 # [Command  Handler] #
 # [----------------] #
@@ -681,11 +647,10 @@ command /gec [<text>]:
 		make console execute "/goldeneyes console %arg 1%"
 		stop
 command /goldeneyesreport [<player>] [<text>]:
-	description: Report a player using GoldenEyes' services
 	aliases: ger, gereport
 	executable by: players and console
 	permission: goldeneyes.report
-	permission message: &cInsufficent Permission.
+	permission message: "&cInsufficent Permission."
 	trigger:
 		if sender is console:
 			send "<red>You may not use this command!" to console
@@ -699,11 +664,10 @@ command /goldeneyesreport [<player>] [<text>]:
 					set yml value "reports.%uuid of arg 1 parsed as player%.name" from file "plugins/GoldenEyes/playerreports.yml" to arg 1
 					staffMsg("<suggest command:/tp %arg 1%>&6%arg 1% was reported by %sender% for&c %arg 2%")
 command /goldeneyes [<text>] [<text>] [<text>]:
-	description: Main GoldenEyes Command.
 	aliases: ge, gec
 	executable by: players and console
 	permission: goldeneyes.maincommand
-	permission message: &cYou do not have permission to execute this command!
+	permission message: &cInsufficent Permission.
 	trigger:
 		if arg 1 is not set:
 			gecmd("version", sender)
@@ -813,7 +777,7 @@ command /goldeneyes [<text>] [<text>] [<text>]:
 					send "&e{@github}" to console
 					send "&8-=-=-=-=-=-=-=-=-=-=-" to console
 				if arg 2 is "addons" or "mods":
-					send "[@name] Addons:" to console
+					send "[{@name}] Addons:" to console
 					loop getAddons():
 						if getAddons() is not set:
 							send "§4[Error]§c None found." to console
@@ -821,14 +785,20 @@ command /goldeneyes [<text>] [<text>] [<text>]:
 						else:
 							send "§a[Addon]§7 %loop-value%" to console
 				if arg 2 is "loadaddon":
+					if file "plugins/Skript/scripts/GoldenEyesAPI.sk" does not exist:
+						send "&cYou require &8[&4GoldenEyesAPI&8]&c to use addons!&r" to sender
+						stop
 					loadAddon(arg 3)
 					send "§a[Addon]§7 Loaded ""addons/%arg 3%""" to console
 				if arg 2 is "unloadaddon":
 					unloadAddon(arg 3)
+					if file "plugins/Skript/scripts/GoldenEyesAPI.sk" does not exist:
+						send "&cYou require &8[&4GoldenEyesAPI&8]&c to use addons!&r" to sender
+						stop
 					send "§a[Addon]§7 Loaded ""addons/%arg 3%""" to console
 				if arg 2 is "about":
 					send "§6Name§e:&f {@name}" to console
-					send "&6Author§e:&f {@author}" to console
+					send "&6Author§e:&f MisterBasic" to console
 					send "&6Version§e:&f {@version}" to console
 					send "&6Description§e:&f {@description}" to console
 				if arg 2 is "help" or "h" or "?":
@@ -857,19 +827,22 @@ command /goldeneyes [<text>] [<text>] [<text>]:
 				gecmd("addons", sender)
 			else:
 				if arg 2 is "load":
+					if file "plugins/Skript/scripts/GoldenEyesAPI.sk" does not exist:
+						send "&cYou require &8[&4GoldenEyesAPI&8]&c to use addons!&r" to sender
+						stop
 					loadAddon(arg 3)
 					send "%{CONFIG::prefix}% Successfully loaded &6'&eaddons/%arg 3%&6'&r" to sender
 				if arg 2 is "unload":
+					if file "plugins/Skript/scripts/GoldenEyesAPI.sk" does not exist:
+						send "&cYou require &8[&4<tooltip:&4Click here to download it!><link:>GoldenEyesAPI&8]&c to use addons!&r" to sender
+						stop
 					unloadAddon(arg 3)
 					send "%{CONFIG::prefix}% Successfully unloaded &6'&eaddons/%arg 3%&6'&r" to sender
 		else:
 			gecmd("unknowncmd", player)
 function gecmd(t: text, p: player):
 	if {_t} is "version":
-		if text from "{@version-pastebin}" is not "{@version}":
-			checkForUpdate()
-		else:
-			send "%{CONFIG::prefix}% Running Version {@version} by {@author}" to {_p}
+		send "%{CONFIG::prefix}% Running Version {@version} by MisterBasic" to {_p}
 	if {_t} is "checks":
 		send "%{CONFIG::prefix}% Avaliable Checks:%nl%AutoClicker, ReachKillaura, FastBow, FastPlaceScaffold, WaterWalk, LiquidInteract, AutoSneak, Flight, AntiKB" to {_p}
 	if {_t} is "reload":
@@ -932,7 +905,7 @@ function gecmd(t: text, p: player):
 		send "&8[&a-=-&8]&7&m------&8[&6GoldenEyes&8]&7&m------&8[&a-=-&8]&r" to {_p}
 	if {_t} is "about":
 		send "&6Name&e: {@name}" to {_p}
-		send "&6Author&e: {@author}" to {_p}
+		send "&6Author&e: MisterBasic" to {_p}
 		send "&6Version&e: {@version}" to {_p}
 		send "&6Description&e: {@description}" to {_p}
 	if {_t} is "addons":
@@ -940,7 +913,6 @@ function gecmd(t: text, p: player):
 			send "%{CONFIG::prefix}% No Addons Found." to {_p}
 		else:
 			send "%{CONFIG::prefix}% Addons: %getAddons()%" to {_p}
-
 # [----------------] #
 # [Functions  API ] #
 # [----------------] #
@@ -952,8 +924,11 @@ function alert(m: text, p: player):
 			loop-player has permission "goldeneyes.notify":
 				if {goldeneyes.notify::%loop-player%} is true:
 					send "%{CONFIG::prefix}% <tooltip:&c&l&nClick to Teleport><cmd:/tp %{_p}%>%{_m}% (Ping: %{_p}'s ping%)" to loop-player
-	send "[@name] %{_m}% (Ping: %{_p}'s ping%)" to console
+	send "[{@name}] %{_m}% (Ping: %{_p}'s ping%)" to console
 	updatePlayerData({_p})
+function registerViolations(p: player, v: text):
+	if yml path "violations.%uuid of {_p}%.%{_v}%" in file "plugins/GoldenEyes/playerdata.yml" doesn't exist:
+		set yml value "violations.%uuid of {_p}%.%{_v}%" from file "plugins/GoldenEyes/playerdata.yml" to 0
 function staffMsg(m: text):
 	loop all players:
 		loop-player has permission "goldeneyes.notify":
@@ -961,13 +936,12 @@ function staffMsg(m: text):
 				send "%{CONFIG::prefix}% %{_m}%" to loop-player
 	send "[@name] %{_m}%" to console
 function gekick(m: text, p: player):
-	{CONFIG::options.kick} is true
-	if difference between {goldeneyes.timeonline.%{_p}%} and now > {@maxtimejoin}:
-		kick {_p} due to "%{CONFIG::prefix}% You were disconnected from the server.%nl%%nl%&4Reason: %{_m}%%nl%%nl%&7Please do not do this again!"
-		loop all players:
-			if loop-player has permission "goldeneyes.notify" or "goldeneyes.notify.kick":
-				send "%{CONFIG::prefix}% %{_p}% was kicked from the server. Reason: %{_m}%" to loop-player
-	send "[@name] %{_p}% was attempted to be kicked from the server. Reason: %{_m}%" to console
+	{goldeneyes.timeonline.%{_p}%} was more than {@maxtimejoin} ago
+	kick {_p} due to "%{CONFIG::prefix}% You were disconnected from the server.%nl%%nl%&4Reason: %{_m}%%nl%%nl%&7Please do not do this again!"
+	loop all players:
+		if loop-player has permission "goldeneyes.notify" or "goldeneyes.notify.kick":
+			send "%{CONFIG::prefix}% %{_p}% was kicked from the server. Reason: %{_m}%" to loop-player
+	send "[{@name}] %{_p}% was attempted to be kicked from the server. Reason: %{_m}%" to console
 function gePermBan(p: player, r: string):
 	set {goldeneyes.banned.%{_p}%} to {_r}
 function geTempBan(p: player, r: string, t: time):
@@ -1007,7 +981,6 @@ function banHandler(p: player, type: string):
 		send "&4ERROR: &cInvaild Type: %{_type}%" to console
 function antiVPNHandler(p: player): 
 
-
 	set {_host} to text from "http://legacy.iphub.info/api.php?ip=%ip of {_p}%&showtype=4"
 	
 	set {_invaild.asn::*} to yml list "checks.antiVPN.blockedhosts" from file "plugins/GoldenEyes/config.yml"
@@ -1018,6 +991,21 @@ function antiVPNHandler(p: player):
 	if {_info} contains {_invaild.asn::*}:
 		log "%{_p}% tried to use a VPN [%ip of {_p}%]" to "GoldenEyes/checks.log"
 		gekick("VPN", {_p})
+function registerViolationsHandler(p: player):
+	registerViolations({_p}, "autoclicker")
+	registerViolations({_p}, "reach")
+	registerViolations({_p}, "fastplace")
+	registerViolations({_p}, "fastbow")
+	registerViolations({_p}, "waterwalk")
+	registerViolations({_p}, "autosneak")
+	registerViolations({_p}, "liquidinteract")
+	registerViolations({_p}, "flight")
+	registerViolations({_p}, "antikb")
+	registerViolations({_p}, "xray")
+	registerViolations({_p}, "speed")
+	registerViolations({_p}, "fastladder")
+	registerViolations({_p}, "badpackets")
+	registerViolations({_p}, "autotool")
 # API
 function updatePlayerData(p: player):
 	set {_uuid} to uuid of {_p}
@@ -1048,7 +1036,7 @@ function updatePluginData(a: int = 1):
 	set {CONFIG::checks.speed.enabled} to yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml"
 	set {CONFIG::checks.badpackets.enabled} to yml value "checks.badpackets.enabled" from file "plugins/GoldenEyes/config.yml"
 	set {CONFIG::options.actionbar-message} to yml value "options.actionbar-message" from file "plugins/GoldenEyes/config.yml"
-
+	
 # Advanced API
 # [-=-=-=-=-=-=-=-=-=-]
 # [     AutoUpdate    ]
@@ -1074,31 +1062,22 @@ function autoUpdateHandler():
 # [-=-=-=-=-=-=-=-=-=-]
 
 function loadAddon(s: string):
-	if {_s} doesn't end with ".sk":
-		if file "pluginsGoldenEyesunloadedAddons/%{_s}%.sk" exists:
-			move file "pluginsGoldenEyesunloadedAddons/%{_s}%.sk" to "plugins/GoldenEyes/addons/%{_s}%.sk"
-			wait 5 ticks
-		copy file "plugins/GoldenEyes/addons/%{_s}%.sk" to "pluginsSkriptscripts/%{_s}%.sk"
-		wait 5 ticks
-		make console execute "/sk reload %{_s}%.sk"
-		wait 5 ticks
-		delete file "pluginsSkriptscripts/%{_s}%.sk"
-	else:
-		if file "pluginsGoldenEyesunloadedAddons/%{_s}%" exists:
-			move file "pluginsGoldenEyesunloadedAddons/%{_s}%.sk" to "plugins/GoldenEyes/addons/%{_s}%.sk"
-			wait 5 ticks
-		copy file "plugins/GoldenEyes/addons/%{_s}%" to "pluginsSkriptscripts/%{_s}%"
-		wait 5 ticks
-		make console execute "/sk reload %{_s}%"
-		wait 5 ticks
-		delete file "pluginsSkriptscripts/%{_s}%"
+	send "<red>Remember, do not put a .sk at the end of the selected directory to file!" to console
+	skutil copy file "plugins/GoldenEyes/addons/%{_s}%.sk" to "plugins/Skript/scripts/addons/"
+	if file "plugins/Skript/scripts/addons/%{_s}%.sk" does not exist:
+		send "<red>Error: &cFile addons/%{_s}%.sk could not load into the server. File does not exist or was not found by the computer." to console
+		stop
+	wait a second
+	make console execute "/skript reload addons/%{_s}%.sk"
+	wait a second
+	skutil delete file "plugins/Skript/scripts/addons/%{_s}%.sk"
 		
 
 function unloadAddon(s: string):
 	if {_s} doesn't end with ".sk":
-		move file "plugins/GoldenEyes/addons/%{_s}%.sk" to "pluginsSkriptscriptsunloadedAddons/%{_s}%.sk"
+		move file "plugins/GoldenEyes/addons/%{_s}%.sk" to "plugins/Skript/scripts/addons/%{_s}%.sk"
 	else:
-		move file "plugins/GoldenEyes/addons/%{_s}%" to "pluginsGoldenEyesunloadedAddons/%{_s}%"
+		move file "plugins/GoldenEyes/addons/%{_s}%" to "plugins/GoldenEyes/addons/%{_s}%"
 function getAddons(a: int = 0) :: strings:
 	set {_dir} to "plugins/GoldenEyes/addons"
 	set {_return::*} to files in dir {_dir}
@@ -1106,4 +1085,3 @@ function getAddons(a: int = 0) :: strings:
 		clear {_return::*}
 	return {_return::*}
 # End
-
