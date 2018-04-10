@@ -7,8 +7,8 @@
 # 	- SkQuery
 # 	- Skellett
 #
-# Last Updated: 2018-04-08
-# Current amount of checks: 17
+# Last Updated: 2018-04-10
+# Current amount of checks: alot
 options:
 	name: GoldenEyes
 	version: 4.4_DEV # replace with 4.5_DEV if you use developer versions
@@ -149,6 +149,7 @@ on disconnect:
 	clear {goldeneyes.nuker.%player%}
 	clear {goldeneyes.packets.%player%}
 	clear {goldeneyes.lastpacket.%player%}
+	clear {goldeneyes.flight.%player%}
 on respawn:
 	set {goldeneyes.timeonline.%player%} to now
 
@@ -203,15 +204,6 @@ on left click:
 		alert("%player% failed AutoTool [%{_tool}%]", player)
 		clear {goldeneyes.updatetool.%player%}
 # [----------------] #
-# [InventoryCleaner] #
-# [----------------] #
-on drop:
-	yml value "checks.inventorycleaner.enabled" from file "plugins/GoldenEyes/config.yml" is true
-	if difference between {goldeneyes.lastdrop.%player%} and now < 0.7 tick:
-		cancel event
-		alert("%player% failed InventoryCleaner", player)
-	set {goldeneyes.lastdrop.%player%} to now
-# [----------------] #
 # [      Reach     ] #
 # [----------------] #
 on damage of player:
@@ -262,41 +254,40 @@ on place:
 # [----------------] #
 
 on chat:
-	yml value "checks.autosneak.enabled" from file "plugins/GoldenEyes/config.yml" is true
+	player is sneaking
+	{CONFIG::checks.autosneak.enabled} is true
 	player does not have permission "goldeneyes.autosneak.bypass"
-	if player is sneaking:
-		add 1 to {CONFIG::violations.%uuid of player%.autosneak}
-		log "%player% failed AutoSneak {Talked while sneaking} [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
-		alert("%player% failed AutoSneak (Chat_SENDMESSAGE) [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)
+	add 1 to {CONFIG::violations.%uuid of player%.autosneak}
+	alert("%player% failed AutoSneak (Chat_MESSAGE) [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)
 on inventory close:
 	# Little extra
 	clear {menu.%player%}
-	yml value "checks.autosneak.enabled" from file "plugins/GoldenEyes/config.yml" is true
-	player does not have permission "goldeneyes.autosneak.bypass"
-	if player is sneaking:
+	player is sneaking
+	if {CONFIG::checks.autosneak.enabled} is true:
+		player does not have permission "goldeneyes.autosneak.bypass"
 		add 1 to {CONFIG::violations.%uuid of player%.autosneak}
 		log "%player% failed AutoSneak {Closed inventory while sneaking} [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
 		alert("%player% failed AutoSneak (Inventory_CLOSE) [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)
 		
 on inventory click:
-	yml value "checks.autosneak.enabled" from file "plugins/GoldenEyes/config.yml" is true
-	player does not have permission "goldeneyes.autosneak.bypass"
-	if player is sneaking:
+	player is sneaking
+	if {CONFIG::checks.autosneak.enabled} is true:
+		player does not have permission "goldeneyes.autosneak.bypass"
 		add 1 to {CONFIG::violations.%uuid of player%.autosneak}
 		log "%player% failed AutoSneak {Clicked in inventory while sneaking} [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
 		alert("%player% failed AutoSneak (Inventory_CLICK) [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)
 on inventory open:
-	yml value "checks.autosneak.enabled" from file "plugins/GoldenEyes/config.yml" is true
-	player does not have permission "goldeneyes.autosneak.bypass"
-	if player is sneaking:
+	player is sneaking
+	if {CONFIG::checks.autosneak.enabled} is true:
+		player does not have permission "goldeneyes.autosneak.bypass"
 		add 1 to {CONFIG::violations.%uuid of player%.autosneak}
 		log "%player% failed AutoSneak {Opened inventory while sneaking} [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
 		alert("%player% failed AutoSneak (Inventory_OPEN) [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)
 on sprint toggle:
+	player is sneaking
 	if player is on ground:
-		yml value "checks.autosneak.enabled" from file "plugins/GoldenEyes/config.yml" is true
-		player does not have permission "goldeneyes.autosneak.bypass"
-		if player is sneaking:
+		if {CONFIG::checks.autosneak.enabled} is true:
+			player does not have permission "goldeneyes.autosneak.bypass"
 			add 1 to {CONFIG::violations.%uuid of player%.autosneak}
 			log "%player% failed AutoSneak {Toggled sprint whilst sneaking} [Ping: %player's ping%, IP: %player's ip%]" to "GoldenEyes/checks.log"
 			alert("%player% failed AutoSneak (Sprint_TOGGLE) [VL %{CONFIG::violations.%uuid of player%.autosneak}%]", player)
@@ -414,11 +405,11 @@ on left click on water or lava::
 	cancel event
 	gekick("LiquidInteract", player)
 # [----------------] #
-# [     Flight     ] #
+# [     NoFall     ] #
 # [----------------] #
 
 on any movement:
-	yml value "checks.flight.enabled" from file "plugins/GoldenEyes/config.yml" is true
+	{CONFIG::checks.flight.enabled} is true
 	block below the player is air
 	block at the player is air
 	flight state of player is false
@@ -444,12 +435,12 @@ on any movement:
 				teleport the player to {_loc}
 				cancel event
 				clear {goldeneyes.move.%player%}
-				alert("%player% failed Flight (Movement) [VL %{CONFIG::violations.%uuid of player%.flight}%]", player)
+				alert("%player% failed NoFall [VL %{CONFIG::violations.%uuid of player%.flight}%]", player)
 				updatePlayerData(player)
 				
 			else if {goldeneyes.move.%player%} > 6:
 				clear {goldeneyes.move.%player%}
-				gekick("Flight (Movement)", player)
+				gekick("NoFallDamage", player)
 			else:
 				difference between {goldeneyes.lastflightcheck.%player%} and now > 1 second
 				add 1 to {CONFIG::violations.%uuid of player%.flight}
@@ -458,28 +449,7 @@ on any movement:
 		
 	wait 1 second
 	set {goldeneyes.move.%player%} to 0
-	
-# [----------------] #
-# [Movement Packets] #
-# [----------------] #
-on packet recieve:
-	if event-string is "PacketPlayInFlying":
-		flight state of player is false
-		player's gamemode is not Creative or Spectator
-		set {_loc} to event-player's location
-		block at event-player is not ladder, vines or barrier
-		add 1 to {goldeneyes.flight.%player%}
-		if {goldeneyes.flight.%player%} >= 15:
-			add 1 to {CONFIG::violations.%uuid of player%.flight}
-			alert("%event-player% failed FlightPacket [VL %{CONFIG::violations.%uuid of player%.flight}%]", event-player)
-			updatePlayerData(event-player)
-			clear {goldeneyes.flight.%player%}
-			wait 3 ticks
-			teleport event-player to {_loc}
-		else if {goldeneyes.flight.%player%} >= 100:
-			clear {goldeneyes.flight.%player%}
-			gekick("Flight (Packet)", player)
-			stop
+
 # [----------------] #
 # [     AntiKB     ] #
 # [----------------] #
@@ -522,35 +492,18 @@ on damage of player:
 
 # Check movement packets sent in 1 second
 on packet recieve:
-	yml value "checks.badpackets.enabled" from file "plugins/GoldenEyes/config.yml" is true
+	{CONFIG::checks.badpackets.enabled} is true
 	event-string is "PacketPlayInPosition"
-	{goldeneyes.packetloc.%player%} is event-player's location
-	if {goldeneyes.lastpacket.%player%} is not set:
-		set {goldeneyes.lastpacket.%player%} to now
-	if difference between {goldeneyes.lastpacket.%player%} and now > 0.5 second:
-		if {goldeneyes.packets.%player%} > 24:
-			alert("%player% failed Bad Packets %nl%Time: %difference between {goldeneyes.lastpacket.%player%} and now%%nl%Packets: %{goldeneyes.packets.%player%}%)", player)
-			clear {goldeneyes.packets.%player%}
-			set {goldeneyes.lastpacket.%player%} to now
-	else:
-		add 1 to {goldeneyes.packets.%player%}
-		set {goldeneyes.lastpacket.%player%} to now
+	add 1 to {goldeneyes.packets.%player%}
+	event-location is event-player's location
+	if {goldeneyes.packets.%player%} > 24:
+		alert("%player% failed Bad Packets %difference between {goldeneyes.lastpacket.%player%} and now%, %{goldeneyes.packets.%player%}%", player)
+		clear {goldeneyes.packets.%player%}
 	set {goldeneyes.lastpacket.%player%} to now
 	set {goldeneyes.packetloc.%player%} to event-player's location
-
-# [----------------] #
-# [     FastEat    ] #
-# [----------------] #
-
-on packet:
-	event-string is "PacketPlayOutUpdateHealth"
-	set {_b} to packet field "b"
-	if difference between {goldeneyes.lastfood.%player%} and now >= 0.2 seconds:
-		if {_b} > {goldeneyes.lastfoodb.%player%}:
-			alert("FastEat", player)
-	set {goldeneyes.lastfood.%player%} to now
-	set {goldeneyes.lastfoodb.%player%} to {_b}
-
+every 1 second:
+	loop all players:
+		clear {goldeneyes.packets.%loop-player%}
 # [----------------] #
 # [      Nuker     ] #
 # [----------------] #
@@ -562,7 +515,9 @@ on block break:
 			clear {goldeneyes.nuker.%player%}
 			clear {goldeneyes.lastnuker.%player%}
 		else:
-			add 1 to {goldeneyes.nuker.%player%}
+			if tool of the player is not enchanted with efficiency 1:
+				if tool of the player is not enchanted with efficiency 2:
+					add 1 to {goldeneyes.nuker.%player%}
 	else:
 		clear {goldeneyes.nuker.%player%}
 	set {goldeneyes.lastnuker.%player%} to now
@@ -577,13 +532,19 @@ on any movement:
 	player is not flying
 	block under the player is not ice or air
 	player's gamemode is not creative or spectator
-	player's ping is less than 270
 	if distance between {goldeneyes.speedlocation.%player%} and player >= 3:
-		if difference between {goldeneyes.lastspeedcheck.%player%} and now < 0.30 seconds:
-			add 1 to {CONFIG::violations.%uuid of player%.speed}
-			alert("%player% failed Speed [VL %{CONFIG::violations.%uuid of player%.speed}%]", player)
-			teleport player to {goldeneyes.speedlocation.%player%}
-			updatePlayerData(player)
+		set {goldeneyes.walkspeed.%player%} to difference between {goldeneyes.lastspeedcheck.%player%} and now
+		if player doesn't have speed:
+			if {goldeneyes.walkspeed.%player%} < 0.25 seconds:
+				add 1 to {CONFIG::violations.%uuid of player%.speed}
+				alert("%player% failed Speed (%{goldeneyes.walkspeed.%player%}%) [VL %{CONFIG::violations.%uuid of player%.speed}%]", player)
+				teleport player to {goldeneyes.speedlocation.%player%}
+				updatePlayerData(player)
+			if {goldeneyes.walkspeed.%player%} < 0.1 seconds:
+				player's ping is less than 100
+				gekick("Speed", player)
+		else:
+			stop
 		player is on ground
 		set {goldeneyes.speedlocation.%player%} to location of player
 		set {goldeneyes.lastspeedcheck.%player%} to now
@@ -605,17 +566,6 @@ on command "/goldeneyes":
 		send "§6%sender% tried to use ""/%full command%"", but doesn't have permission." to console
 		send "&cYou do not have permission to execute this command!" to player
 
-# AntiCommand
-on command:
-	player does not have permission "goldeneyes.anticommand.bypass"
-	if command contains ":":
-		set {_cmd::*} to command split at ":"
-		
-		set {_maincommand} to {_cmd::1}
-		set {_realcommand} to {_cmd::2}
-		
-		if {_maincommand} is "/bukkit", "/minecraft" or "/spigot":
-			cancel event
 command /ping [<text>]: 
 	trigger:
 		if player has permission "goldeneyes.ping":
@@ -637,7 +587,7 @@ command /goldeneyesreport [<player>] [<text>]:
 	aliases: ger, gereport
 	executable by: players and console
 	permission: goldeneyes.report
-	permission message: "&cInsufficent Permission."
+	permission message: &cInsufficent Permission.
 	trigger:
 		if sender is console:
 			send "<red>You may not use this command!" to console
@@ -649,7 +599,8 @@ command /goldeneyesreport [<player>] [<text>]:
 						create file "plugins/GoldenEyes/playerreports.yml"
 					set yml value "reports.%uuid of arg 1 parsed as player%.%sender%.reason" from file "plugins/GoldenEyes/playerreports.yml" to arg 2
 					set yml value "reports.%uuid of arg 1 parsed as player%.name" from file "plugins/GoldenEyes/playerreports.yml" to arg 1
-					staffMsg("<suggest command:/tp %arg 1%>&6%arg 1% was reported by %sender% for&c %arg 2%")
+					send "&eSuccessfully reported %arg 1% for &c%arg 2%&e!"
+					staffMsg("&6%sender% reported %arg 1% for&c %arg 2%", "/tp %arg 1%")
 command /goldeneyes [<text>] [<text>] [<text>]:
 	aliases: ge, gec
 	executable by: players and console
@@ -821,7 +772,7 @@ command /goldeneyes [<text>] [<text>] [<text>]:
 					send "%{CONFIG::prefix}% Successfully loaded &6'&eaddons/%arg 3%&6'&r" to sender
 				if arg 2 is "unload":
 					if file "plugins/Skript/scripts/GoldenEyesAPI.sk" does not exist:
-						send "&cYou require &8[&4<tooltip:&4Click here to download it!><link:>GoldenEyesAPI&8]&c to use addons!&r" to sender
+						send "&cYou require &8[&4<tooltip:&4Click here to download it!><link:{@github}/releases/download/1.0>GoldenEyesAPI&8]&c to use addons!&r" to sender
 						stop
 					unloadAddon(arg 3)
 					send "%{CONFIG::prefix}% Successfully unloaded &6'&eaddons/%arg 3%&6'&r" to sender
@@ -908,20 +859,22 @@ function alert(m: text, p: player):
 	log "%{_m}% (Ping: %{_p}'s ping%, IP: %{_p}'s ip%)" to "Goldeneyes/checks.log"
 	if difference between {goldeneyes.timeonline.%{_p}%} and now > {@maxtimejoin}:
 		loop all players:
-			loop-player has permission "goldeneyes.notify":
-				if {goldeneyes.notify::%loop-player%} is true:
-					send "%{CONFIG::prefix}% <tooltip:&c&l&nClick to Teleport><cmd:/tp %{_p}%>%{_m}% (Ping: %{_p}'s ping%)" to loop-player
+			if {goldeneyes.notify::%loop-player%} is true:
+				if {_p}'s ping > 300:
+					send "%{CONFIG::prefix}% <tooltip:&c&l&nClick to Teleport><cmd:/tp %{_p}%>%{_m}% &e(Ping:&c %{_p}'s ping%&e)" to loop-player
+				else:
+					send "%{CONFIG::prefix}% <tooltip:&c&l&nClick to Teleport><cmd:/tp %{_p}%>%{_m}% &e(Ping:&a %{_p}'s ping%&e)" to loop-player
 	send "[{@name}] %{_m}% (Ping: %{_p}'s ping%)" to console
 	updatePlayerData({_p})
 function registerViolations(p: player, v: text):
 	if yml path "violations.%uuid of {_p}%.%{_v}%" in file "plugins/GoldenEyes/playerdata.yml" doesn't exist:
 		set yml value "violations.%uuid of {_p}%.%{_v}%" from file "plugins/GoldenEyes/playerdata.yml" to 0
-function staffMsg(m: text):
+function staffMsg(m: text, sgtcmd: text):
 	loop all players:
 		loop-player has permission "goldeneyes.notify":
 			if {goldeneyes.notify::%loop-player%} is true:
-				send "%{CONFIG::prefix}% %{_m}%" to loop-player
-	send "[@name] %{_m}%" to console
+				send "%{CONFIG::prefix}% <suggest command: %{_sgtccmd}%>%{_m}%" to loop-player
+	send "[{@name}] %{_m}%" to console
 function gekick(m: text, p: player):
 	{goldeneyes.timeonline.%{_p}%} was more than {@maxtimejoin} ago
 	kick {_p} due to "%{CONFIG::prefix}% You were disconnected from the server.%nl%%nl%&4Reason: %{_m}%%nl%%nl%&7Please do not do this again!"
@@ -960,10 +913,10 @@ function isPermBanned(p: player) :: boolean:
 function banHandler(p: player, type: string):
 	if {_type} is "Permanent":
 		kick {_p} due to "%{CONFIG::prefix}% You have been %{_type}% banned from this server!%nl%%nl%&4Reason: %{goldeneyes.banned.%{_p}%}%%nl%%nl%&7This will never expire!"
-		staffMsg("%{CONFIG::prefix}% %{_p}% tried to join, but is &cBANNED")
+		staffMsg("%{CONFIG::prefix}% %{_p}% tried to join, but is &cBANNED", "")
 	else if {_type} is "Permanent":
 		kick {_p} due to "%{CONFIG::prefix}% You have been %{_type}% banned from this server!%nl%%nl%&4Reason: %{goldeneyes.banned.%{_p}%}%%nl%%nl%&7This will never expire!"
-		staffMsg("%{CONFIG::prefix}% %{_p}% tried to join, but is &cBANNED")
+		staffMsg("%{CONFIG::prefix}% %{_p}% tried to join, but is &cBANNED", "")
 	else: 
 		send "&4ERROR: &cInvaild Type: %{_type}%" to console
 function antiVPNHandler(p: player): 
