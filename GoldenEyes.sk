@@ -11,7 +11,7 @@
 # Current amount of checks: 17
 options:
 	name: GoldenEyes
-	version: 4.4_DEV # replace with 4.3_DEV if you want to use developer versions
+	version: 4.4_DEV # replace with 4.5_DEV if you use developer versions
 	description: Stop cheaters from hacking on your server!
 	
 	# Websites
@@ -21,11 +21,11 @@ options:
 
 	# Checks
 
-	maxtimejoin: 30 seconds # Time between when the player joins and when the anticheat will begin detected
+	maxtimejoin: 30 seconds # Time between when the player joins and when the anticheat will begin alerting
 
 	autoclicker: 15 # Maximum CPS for alert
 	autoclicker-kick: 30 # Maximum CPS for kick
-	reach: 5 # Maximum Reach for alert
+	reach: 4.5 # Maximum Reach for alert
 	fastplace: 20 # Maximum Blocks placed for alert
 	fastladder: 4 # Maximum CPS for alert
 
@@ -164,24 +164,14 @@ every 2 minutes:
 
 on left click:
 	{CONFIG::.checks.autoclicker.enabled} is true
-	player does not have permission "goldeneyes.autoclicker.bypass"
-	add 1 to {goldeneyes.cps::%player%}
-	if {goldeneyes.lastclick.%player%} is not set:
-		set {goldeneyes.lastclick.%player%} to now
-	if {goldeneyes.cps::%player%} >= {@autoclicker}:
-		add 1 to {CONFIG::violations.%uuid of player%.autoclicker}
-		alert("%player% failed FastClick (CPS: %{goldeneyes.cps::%player%}%) [VL %{goldeneyes.autoclicker.%player%.vl}%]", player)
-	if {goldeneyes.cps::%player%} >= {@autoclicker-kick}:
-		gekick("AutoClicker", player)
-	if {goldeneyes.lastclick.%player%} was less than 0.20 ticks ago:
+	#player does not have permission "goldeneyes.autoclicker.bypass"
+	if difference between {goldeneyes.lastclick.%player%} and now < 2 ticks:
 		add 1 to {CONFIG::violations.%uuid of player%.autoclicker}
 		alert("%player% failed FastClick [VL %{goldeneyes.autoclicker.%player%.vl}%]", player)
-	updatePlayerData(player)
-	wait 1 second
-	remove 1 from {goldeneyes.cps::%player%}
+		updatePlayerData(player)
+	set {goldeneyes.lastclick.%player%} to now
 every second:
 	clear {goldeneyes.fastplace::*}
-	clear {goldeneyes.cps::*}
 # [----------------] #
 # [    FastBow     ] #
 # [----------------] #
@@ -417,18 +407,12 @@ on right click on water or lava:
 	yml value "checks.liquidinteract.enabled" from file "plugins/GoldenEyes/config.yml" is true
 	player does not have permission "goldeneyes.liquidinteract.bypass"
 	cancel event
-	add 1 to {CONFIG::violations.%uuid of player%.liquidinteract}
-	alert("%player% failed LiquidInteract [VL %{CONFIG::violations.%uuid of player%.liquidinteract}%]", player)
+	gekick("LiquidInteract", player)
 on left click on water or lava::
 	yml value "checks.liquidinteract.enabled" from file "plugins/GoldenEyes/config.yml" is true
 	player does not have permission "goldeneyes.liquidinteract.bypass"
 	cancel event
-	add 1 to {CONFIG::violations.%uuid of player%.liquidinteract}
-on block damage:
-	yml value "checks.liquidinteract.enabled" from file "plugins/GoldenEyes/config.yml" is true
-	player does not have permission "goldeneyes.liquidinteract.bypass"
-	if event-block is water or lava:
-		gekick("LiquidInteract", player)
+	gekick("LiquidInteract", player)
 # [----------------] #
 # [     Flight     ] #
 # [----------------] #
@@ -437,7 +421,7 @@ on any movement:
 	yml value "checks.flight.enabled" from file "plugins/GoldenEyes/config.yml" is true
 	block below the player is air
 	block at the player is air
-	player is not flying
+	flight state of player is false
 	player is not riding
 	player is on ground
 	set {_blocks} to 0
@@ -455,35 +439,39 @@ on any movement:
 			stop
 		if {_blocks} is less than 1:
 			# Alerts
-			add 1 to {CONFIG::violations.%uuid of player%.flight}
-			add 1 to {goldeneyes.move.%player%}
-			if {goldeneyes.move.%player%} > 5:
-				alert("%player% failed Flight (Movement) [VL %{CONFIG::violations.%uuid of player%.flight}%]", player)
+			
+			if {goldeneyes.move.%player%} >= 5:
 				teleport the player to {_loc}
 				cancel event
-			if {goldeneyes.move.%player%} > 6:
+				clear {goldeneyes.move.%player%}
+				alert("%player% failed Flight (Movement) [VL %{CONFIG::violations.%uuid of player%.flight}%]", player)
+				updatePlayerData(player)
+				
+			else if {goldeneyes.move.%player%} > 6:
 				clear {goldeneyes.move.%player%}
 				gekick("Flight (Movement)", player)
-	updatePlayerData(player)
+			else:
+				difference between {goldeneyes.lastflightcheck.%player%} and now > 1 second
+				add 1 to {CONFIG::violations.%uuid of player%.flight}
+				add 1 to {goldeneyes.move.%player%}
+				set {goldeneyes.lastflightcheck.%player%} to now
+		
 	wait 1 second
-	remove 1 from {goldeneyes.move.%player%}
+	set {goldeneyes.move.%player%} to 0
 	
 # [----------------] #
 # [Movement Packets] #
 # [----------------] #
 on packet recieve:
 	if event-string is "PacketPlayInFlying":
-		ground state of event-player is false
 		flight state of player is false
 		player's gamemode is not Creative or Spectator
 		set {_loc} to event-player's location
 		block at event-player is not ladder, vines or barrier
 		add 1 to {goldeneyes.flight.%player%}
 		if {goldeneyes.flight.%player%} >= 15:
-			wait a tick
 			add 1 to {CONFIG::violations.%uuid of player%.flight}
 			alert("%event-player% failed FlightPacket [VL %{CONFIG::violations.%uuid of player%.flight}%]", event-player)
-			
 			updatePlayerData(event-player)
 			clear {goldeneyes.flight.%player%}
 			wait 3 ticks
@@ -491,8 +479,7 @@ on packet recieve:
 		else if {goldeneyes.flight.%player%} >= 100:
 			clear {goldeneyes.flight.%player%}
 			gekick("Flight (Packet)", player)
-		stop
-
+			stop
 # [----------------] #
 # [     AntiKB     ] #
 # [----------------] #
@@ -503,19 +490,19 @@ on damage of player:
 		stop
 	else:
 		set {_loc1} to location of victim
-		wait 7 ticks
+		wait 4 ticks
 		victim is not riding
 		victim is not flying
 		block west of victim is air
 		block east of victim is air
 		block north of victim is air
 		block south the victim is air
-		
 		block west of the block above the victim is air
 		block east of the block above the victim is air
 		block north of the block above the victim is air
 		block south of the block above the victim is air
 		block below the victim is not water or lava
+
 		if block at victim is not cobweb:
 			if victim's gamemode is not Creative or Spectator:
 				if distance between {_loc1} and victim < 0.1:
@@ -591,8 +578,8 @@ on any movement:
 	block under the player is not ice or air
 	player's gamemode is not creative or spectator
 	player's ping is less than 270
-	if distance between {goldeneyes.speedlocation.%player%} and player >= 5:
-		if difference between {goldeneyes.lastspeedcheck.%player%} and now < 0.4 seconds:
+	if distance between {goldeneyes.speedlocation.%player%} and player >= 3:
+		if difference between {goldeneyes.lastspeedcheck.%player%} and now < 0.30 seconds:
 			add 1 to {CONFIG::violations.%uuid of player%.speed}
 			alert("%player% failed Speed [VL %{CONFIG::violations.%uuid of player%.speed}%]", player)
 			teleport player to {goldeneyes.speedlocation.%player%}
