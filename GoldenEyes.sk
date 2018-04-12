@@ -3,12 +3,13 @@
 # DO NOT REDISTRIBUTE WITHOUT MY PERMISSION!
 #
 # Dependencies:
+#	- Skript
 # 	- SkUtilities
 # 	- SkQuery
 # 	- Skellett
 #
-# Last Updated: 2018-04-10
-# Current amount of checks: alot
+# Last Updated: 2018-04-08
+# Current amount of checks: 17
 options:
 	name: GoldenEyes
 	version: 4.4_DEV # replace with 4.5_DEV if you use developer versions
@@ -160,6 +161,14 @@ every 2 minutes:
 	send an actionbar with "&8[&c!&8]&f %{CONFIG::options.actionbar-message}% &8[&c!&8]&e" to all players # From Skellett
 
 # [----------------] #
+# [   Self Damage  ] #
+# [----------------] #
+
+on damage:
+	if attacker is victim:
+		gekick("Self Damage", attacker)
+
+# [----------------] #
 # [   AutoClicker  ] #
 # [----------------] #
 
@@ -192,17 +201,26 @@ on shoot:
 # [    AutoTool    ] #
 # [----------------] #
 on tool change:
-	#yml value "checks.autotool.enabled" from file "plugins/GoldenEyes/config.yml" is true
+	yml value "checks.autotool.enabled" from file "plugins/GoldenEyes/config.yml" is true
 	set {goldeneyes.updatetool.%player%} to player's held item
 	wait 2 ticks
 	clear {goldeneyes.updatetool.%player%}
 
 on left click:
 	wait 1 tick
-	if {%player%.changedtool} is set:
+	if {goldeneyes.updatetool.%player%} is set:
 		set {_tool} to convert string "%player's held item%" to uppercase
 		alert("%player% failed AutoTool [%{_tool}%]", player)
 		clear {goldeneyes.updatetool.%player%}
+# [----------------] #
+# [InventoryCleaner] #
+# [----------------] #
+on drop:
+	yml value "checks.inventorycleaner.enabled" from file "plugins/GoldenEyes/config.yml" is true
+	if difference between {goldeneyes.lastdrop.%player%} and now < 0.7 tick:
+		cancel event
+		alert("%player% failed InventoryCleaner", player)
+	set {goldeneyes.lastdrop.%player%} to now
 # [----------------] #
 # [      Reach     ] #
 # [----------------] #
@@ -326,7 +344,6 @@ on mine:
 		alert("%player% might be using Xray! [Iron Mined: %{goldeneyes.ironmined.%player%}%]", player)
 		clear {goldeneyes.ironmined.%player%}
 		
-# ANTI-XRAY!
 every 10 minutes:
 	loop all players:
 		clear {goldeneyes.ironmined.%loop-player%}
@@ -399,7 +416,7 @@ on right click on water or lava:
 	player does not have permission "goldeneyes.liquidinteract.bypass"
 	cancel event
 	gekick("LiquidInteract", player)
-on left click on water or lava::
+on left click on water or lava:
 	yml value "checks.liquidinteract.enabled" from file "plugins/GoldenEyes/config.yml" is true
 	player does not have permission "goldeneyes.liquidinteract.bypass"
 	cancel event
@@ -479,11 +496,10 @@ on damage of player:
 					if victim's ping is less than 260:
 						add 1 to {CONFIG::violations.%uuid of victim%.antikb}
 						add 1 to {goldeneyes.antikb.%victim%}
-						log "%victim% failed AntiKnockback [Ping: %victim's ping%, IP: %victim's ip%]" to "GoldenEyes/checks.log"
 						alert("%victim% failed AntiKnockBack [VL %{CONFIG::violations.%uuid of victim%.antikb}%]", victim)
 						if {goldeneyes.antikb.%victim%} >= 20:
 							clear {goldeneyes.antikb.%victim%}
-							gekick("Velocity / AntiKnockback", victim)
+							gekick("AntiKnockback", victim)
 
 
 # [----------------] #
@@ -515,9 +531,11 @@ on block break:
 			clear {goldeneyes.nuker.%player%}
 			clear {goldeneyes.lastnuker.%player%}
 		else:
-			if tool of the player is not enchanted with efficiency 1:
-				if tool of the player is not enchanted with efficiency 2:
-					add 1 to {goldeneyes.nuker.%player%}
+			if tool of the player is enchanted with efficiency 1:
+				stop
+			if tool of the player is enchanted with efficiency 2:
+				stop
+			add 1 to {goldeneyes.nuker.%player%}
 	else:
 		clear {goldeneyes.nuker.%player%}
 	set {goldeneyes.lastnuker.%player%} to now
@@ -530,6 +548,7 @@ on any movement:
 	yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml" is true
 	{teleporting.%player%} is false
 	player is not flying
+	player's ping is less than 450
 	block under the player is not ice or air
 	player's gamemode is not creative or spectator
 	if distance between {goldeneyes.speedlocation.%player%} and player >= 3:
@@ -578,10 +597,13 @@ command /ping [<text>]:
 					send "&6%arg 1%'s Ping&e: %ping of arg 1 parsed as player%" to player
 		else:
 			send "&cInsufficent Permission." to player
-command /gec [<text>]:
+command /goldeneyesconsole [<text>]:
+	aliases: /gec, /goldeneyesc
 	trigger:
-		sender is console
-		make console execute "/goldeneyes console %arg 1%"
+		if sender is console:
+			make console execute "/goldeneyes console %arg 1%"
+		else:
+			send "&4You may not execute this command!" to sender
 		stop
 command /goldeneyesreport [<player>] [<text>]:
 	aliases: ger, gereport
@@ -597,9 +619,9 @@ command /goldeneyesreport [<player>] [<text>]:
 				if arg 2 is set:
 					if file "plugins/GoldenEyes/playerreports.yml" does not exist:
 						create file "plugins/GoldenEyes/playerreports.yml"
-					set yml value "reports.%uuid of arg 1 parsed as player%.%sender%.reason" from file "plugins/GoldenEyes/playerreports.yml" to arg 2
-					set yml value "reports.%uuid of arg 1 parsed as player%.name" from file "plugins/GoldenEyes/playerreports.yml" to arg 1
-					send "&eSuccessfully reported %arg 1% for &c%arg 2%&e!"
+					set yml value "reports.%uuid of arg 1 parsed as player%.%sender%.reason" from file "plugins/GoldenEyes/playerreports.yml" to arg 2 parsed as text
+					set yml value "reports.%uuid of arg 1 parsed as player%.name" from file "plugins/GoldenEyes/playerreports.yml" to arg 1 parsed as text
+					send "&eSuccessfully reported %arg 1% for &c%arg 2%&e!" to sender
 					staffMsg("&6%sender% reported %arg 1% for&c %arg 2%", "/tp %arg 1%")
 command /goldeneyes [<text>] [<text>] [<text>]:
 	aliases: ge, gec
@@ -782,7 +804,7 @@ function gecmd(t: text, p: player):
 	if {_t} is "version":
 		send "%{CONFIG::prefix}% Running Version {@version} by MisterBasic" to {_p}
 	if {_t} is "checks":
-		send "%{CONFIG::prefix}% Avaliable Checks:%nl%AutoClicker, ReachKillaura, FastBow, FastPlaceScaffold, WaterWalk, LiquidInteract, AutoSneak, Flight, AntiKB" to {_p}
+		send "%{CONFIG::prefix}% Avaliable Checks:%nl%AutoClicker, Reach, FastBow, FastPlace, WaterWalk, LiquidInteract, AutoSneak, Flight, AntiKB" to {_p}
 	if {_t} is "reload":
 		make console execute "/sk reload %script name%.sk"
 		send "%{CONFIG::prefix}% <tooltip:&6{@version}>Fully reloaded {@name} v{@version}!" to {_p}
@@ -850,7 +872,7 @@ function gecmd(t: text, p: player):
 		if getAddons() is not set:
 			send "%{CONFIG::prefix}% No Addons Found." to {_p}
 		else:
-			send "%{CONFIG::prefix}% Addons: %getAddons()%" to {_p}
+			send "%{CONFIG::prefix}% Addons:%nl% %getAddons()%" to {_p}
 # [----------------] #
 # [Functions  API ] #
 # [----------------] #
