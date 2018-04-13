@@ -1,7 +1,6 @@
 # [-=-=-=-=-=-=-=-=-=-]
 # [     Violations    ]
 # [-=-=-=-=-=-=-=-=-=-]
-
 # Example: getViolations(player, "Reach")
 function getViolations(p: player, hack: string) :: integer:
 	set {_uuid} to uuid of {_p}
@@ -21,15 +20,11 @@ function isInStaffMode(p: player) :: boolean:
 		return false
 function toggleStaffMode(p: player):
 	if isInStaffMode({_p}):
-		set {goldeneyes.staffmode.%{_p}%} to false
-		reveal {_p} to all players
-		send "&eYou are no longer in StaffMode!" to {_p}
+		setStaffMode({_p}, false)
 	else:
-		set {goldeneyes.staffmode.%{_p}%} to true
-		hide {_p} from all players
-		send "&eYou are now in StaffMode!" to {_p}
+		setStaffMode({_p}, false)
 function setStaffMode(p: player, b: boolean):
-	if {_b}:
+	if {_b} is true:
 		set {goldeneyes.staffmode.%{_p}%} to true
 		hide {_p} from all players
 		send "&eYou are now in StaffMode!" to {_p}
@@ -37,3 +32,24 @@ function setStaffMode(p: player, b: boolean):
 		set {goldeneyes.staffmode.%{_p}%} to false
 		reveal {_p} to all players
 		send "&eYou are no longer in StaffMode!" to {_p}
+		
+# [-=-=-=-=-=-=-=-=-=-]
+# [       Config      ]
+# [-=-=-=-=-=-=-=-=-=-]
+function getConfigValue(v: text) :: string:
+	return yml value "%{_t}%" from file "plugins/GoldenEyes/config.yml"
+function getConfigList(v: text) :: string:
+	return yml value "%{_t}%" from file "plugins/GoldenEyes/config.yml"
+function getConfigNodes(v: text) :: string:
+	return yml nodes "%{_t}%" from file "plugins/GoldenEyes/config.yml"
+function getConfigNodeKeys(v: text) :: string:
+	return yml node keys "%{_t}%" from file "plugins/GoldenEyes/config.yml"
+function getConfigFile() :: text:
+	return "plugins/GoldenEyes/config.yml"
+function setConfigValue(v: text) :: boolean:
+	if yml path "%{_v}%" in file "plugins/GoldenEyes/config.yml" exists:
+		set yml value ""
+		return true
+	else:
+		send "[Error] YAML value ""%{_v}%"" does not exist in configuration file."
+		return true
