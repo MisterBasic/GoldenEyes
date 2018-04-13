@@ -1,6 +1,5 @@
 options:
 	version: 1.0
-	author: MisterBasic
 	
 on enable:
 	send "[GoldenEyes-StaffMode] Enabling StaffMode v{@version}" to console
@@ -16,6 +15,22 @@ command /staffmode [<text>]:
 			setStaffMode(player, arg 1 parsed as boolean)
 		else:
 			toggleStaffMode(player)
+on drop:
+	if isInStaffMode(player) is true:
+		cancel event
+		send "&cYou can not do that while in staffmode!" to player
+on item pickup:
+	if isInStaffMode(player) is true:
+		cancel event
+on block damage:
+	if isInStaffMode(player) is true:
+		cancel event
+on block break:
+	if isInStaffMode(player) is true:
+		cancel event
+		send "&cYou can not do that while in staffmode!" to player
+on place:
+	if isInStaffMode(player) is true:
+		cancel event
+		send "&cYou can not do that while in staffmode!" to player
 # End
-
-
