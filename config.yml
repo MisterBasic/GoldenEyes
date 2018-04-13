@@ -1,4 +1,10 @@
-# Created by MisterBasic, Do not redistribute! #
+# Created by MisterBasic, Do not redistribute!!!
+# 
+# https://github.com/MisterBasic/GoldenEyes
+# https://www.spigotmc.org/resources/authors/misterbasic.479098/
+# 
+# This is your configuration file :D
+
 
 plugin:
   prefix: §8[§6GoldenEyes§8]§e
@@ -31,27 +37,31 @@ checks:
     enabled: true
   antikb:
     enabled: true
+  inventorycleaner:
+    enabled: true
   xray:
     enabled: false
   speed:
-    enabled: false
-  fastladder:
-    enabled: false
+    enabled: true
   badpackets:
-    enabled: false
-  antiVPN:
+    enabled: true
+  antivpn:
     enabled: true
     blockedhosts:
+    - ARETI-AS
     - EGIHostings
     - EGIHosting
     - anchorfree
     - Netherlands
+    - NFORCE
     - Leaseweb
     - M247
     - PLI-AS
-    - Choopa
     - HostUS
-    - NFORCE
     - IOMART-AS
     - WideOpenWest
-    - ARETI-AS
+    - Choopa
+chat-manager:
+  enabled: false
+  blocked-words:
+  - Unicorns_and_ponies
