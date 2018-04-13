@@ -1,5 +1,6 @@
 violations:
-  <uuid>:
+  [uuid]:
+    flight: 0
     autoclicker: 0
     reach: 0
     fastplace: 0
@@ -7,8 +8,10 @@ violations:
     waterwalk: 0
     autosneak: 0
     liquidinteract: 0
-    flight: 0
     antikb: 0
-    speed: 0
-    noslow: 0
     xray: 0
+    speed: 0
+    fastladder: 0
+    badpackets: 0
+    autotool: 0
+    nuker: 0
