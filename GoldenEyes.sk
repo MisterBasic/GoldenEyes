@@ -14,15 +14,14 @@
 # goldeneyes.silentjoin (Join w/o a join message)
 # goldeneyes.
 #
-# Last Updated: 2018-04-20
-
+# Last Updated: 2018-04-08
+# Current amount of checks: 17
 options:
-	name: GoldenEyes
-	version: 0.5 # replace with 4.6_DEV if you use developer versions
+	VERSION: 0.5 # replace with 4.6_DEV if you use developer versions
 	
 	# Websites
 	github: https://github.com/MisterBasic/GoldenEyes
-	version-pastebin: https://api.spigotmc.org/legacy/update.php?resource=54638/
+	VERSION-pastebin: https://api.spigotmc.org/legacy/update.php?resource=54638/
 	devversion-pastebin: https://pastebin.com/raw/jbR5DcqP
 
 	# Checks
@@ -45,7 +44,7 @@ on enable:
 	# AutoUpdater
 	autoUpdateHandler()
 	# Console enable message
-	send "[{@name}] Enabling {@name} v{@version}" to console
+	send "[GoldenEyes] Enabling GoldenEyes v{@VERSION}" to console
 	# Configuration Manager
 	clear {GOLDENEYES.CONFIG::*}
 	if file "plugins/GoldenEyes/config.yml" exists:
@@ -63,7 +62,7 @@ on enable:
 		create directory "plugins/GoldenEyes/addons"
 	updatePluginData()
 on disable:
-	send "[{@name}] Disabling {@name} v{@version}" to console
+	send "[GoldenEyes] Disabling GoldenEyes v{@VERSION}" to console
 on first join:
 	set {goldeneyes.timeonline.%player%} to now
 	registerViolationsHandler(player)
@@ -80,11 +79,7 @@ on join:
 on quit:
 	if player has permission "goldeneyes.silentjoin":
 		set quit message to ""
-on connect:
-	if yml value "checks.antivpn.enabled" from file "plugins/GoldenEyes/config.yml" is true:
-		antiVPNHandler(player)
 on disconnect:
-	clear {goldeneyes.updatetool.%player%}
 	clear {goldeneyes.lastfood.%player%}
 	clear {goldeneyes.lastfoodb.%player%}
 	clear {goldeneyes.timeonline.%player%}
@@ -94,7 +89,6 @@ on disconnect:
 	clear {goldeneyes.changedtool.%player%}
 	clear {goldeneyes.lastdrop.%player%}
 	clear {goldeneyes.lastplace.%player%}
-	clear {goldeneyes.move.%player%}
 	clear {goldeneyes.waterwalk.%player%}
 	clear {goldeneyes.antikb.%player%}
 	clear {goldeneyes.nuker.%player%}
@@ -120,7 +114,7 @@ every 2 minutes:
 # [   Self Damage  ] #
 # [----------------] #
 
-on damage:
+on damage of player:
 	attacker is set
 	victim is set
 	if {GOLDENEYES.CONFIG::debug} is false:
@@ -128,7 +122,28 @@ on damage:
 			stop
 	if "%attacker%" is "%victim%":
 		gekick("Self Damage", attacker)
+# [----------------] #
+# [ImpossibleEvents] #
+# [----------------] #
 
+# Code here <!!>
+
+# [----------------] #
+# [    Accuracy    ] #
+# [----------------] #
+on damage:
+	if {GOLDENEYES.CONFIG::debug} is false:
+		if attacker has permission "goldeneyes.accuracy.bypass":
+			stop
+	add 1 to {goldeneyes.accuracy::%attacker%}
+	if {goldeneyes.accuracy::%attacker%} > 3:
+		alert("%attacker% failed Accuracy", attacker)
+		clear {goldeneyes.accuracy::%attacker%}
+on left click:
+	if clicked entity is not set:
+		clear {goldeneyes.accuracy::%player%}
+every 1 second:
+	clear {goldeneyes.accuracy::*}
 # [----------------] #
 # [   AutoClicker  ] #
 # [----------------] #
@@ -369,6 +384,7 @@ on any movement:
 # [     AntiKB     ] #
 # [----------------] #
 on damage of player:
+	victim is a player
 	{GOLDENEYES.CONFIG::checks.antikb.enabled} is true
 	if {GOLDENEYES.CONFIG::debug} is false:
 		if victim has permission "goldeneyes.antiknockback.bypass":
@@ -428,9 +444,7 @@ on block break:
 			clear {goldeneyes.nuker.%player%}
 			clear {goldeneyes.lastnuker.%player%}
 		else:
-			if tool of the player is enchanted with efficiency 1:
-				stop
-			if tool of the player is enchanted with efficiency 2:
+			if tool of the player is enchanted with efficiency:
 				stop
 			add 1 to {goldeneyes.nuker.%player%}
 	else:
@@ -705,17 +719,17 @@ command /goldeneyes [<text>] [<text>] [<text>]:
 		else if arg 1 is "console" or "c":
 			if sender is console:
 				if arg 2 is "version":
-					send "&8[&6GoldenEyesAntiCheat&8]&e Running {@name} v{@version}!" to sender
+					send "&8[&6GoldenEyesAntiCheat&8]&e Running GoldenEyes v{@VERSION}!" to sender
 				if arg 2 is "reload" or "rl":
 					make console execute "/sk reload %script name%.sk"
-					send "&8[&6GoldenEyesAntiCheat&8]&e Fully reloaded {@name} v{@version}!" to sender
+					send "&8[&6GoldenEyesAntiCheat&8]&e Fully reloaded GoldenEyes v{@VERSION}!" to sender
 				if arg 2 is "github" or "git" or "snapshots":
 					send "&8-=-=-=-=-=-=-=-=-=-=-" to console
 					send "&6You can get snapshots at:" to console
 					send "&e{@github}" to console
 					send "&8-=-=-=-=-=-=-=-=-=-=-" to console
 				if arg 2 is "addons" or "mods":
-					send "[{@name}] Addons:" to console
+					send "[GoldenEyes] Addons:" to console
 					loop getAddons():
 						if getAddons() is not set:
 							send "§4[Error]§c None found." to console
@@ -735,9 +749,9 @@ command /goldeneyes [<text>] [<text>] [<text>]:
 						stop
 					send "§a[Addon]§7 Loaded ""addons/%arg 3%""" to console
 				if arg 2 is "about":
-					send "§6Name§e:&f {@name}" to console
+					send "§6Name§e:&f GoldenEyes" to console
 					send "&6Author§e:&f MisterBasic" to console
-					send "&6Version§e:&f {@version}" to console
+					send "&6Version§e:&f {@VERSION}" to console
 					send "&6Description§e:&f An AntiCheat that detects and blocks malicious hacks" to console
 				if arg 2 is "help" or "h" or "?":
 					send "[!] goldeneyes c(onsole) version: Diplays version" to console
@@ -792,46 +806,12 @@ command /goldeneyes [<text>] [<text>] [<text>]:
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 function gecmd(t: text, p: player):
 	if {_t} is "version":
-		send "%{GOLDENEYES.CONFIG::prefix}% Running Version {@version} by MisterBasic" to {_p}
+		send "%{GOLDENEYES.CONFIG::prefix}% Running Version {@VERSION} by MisterBasic" to {_p}
 	if {_t} is "checks":
 		send "%{GOLDENEYES.CONFIG::prefix}% Avaliable Checks:%nl%AutoClicker, Reach, FastBow, FastPlace, WaterWalk, LiquidInteract, AutoSneak, Flight, AntiKB, BadPackets, Speed and Nuker" to {_p}
 	if {_t} is "reload":
 		make console execute "/sk reload %script name%.sk"
-		send "%{GOLDENEYES.CONFIG::prefix}% Fully reloaded {@name} v{@version}!" to {_p}
-	if {_t} is "reload-config":
-		clear {GOLDENEYES.CONFIG::*}
-		set {GOLDENEYES.CONFIG::prefix} to yml value "plugin.prefix" from file "plugins/GoldenEyes/config.yml"
-		set {GOLDENEYES.CONFIG::debug} to yml value "plugin.debug" from file "plugins/GoldenEyes/config.yml"
-		set {GOLDENEYES.CONFIG::options.kick} to yml value "options.kick" from file "plugins/GoldenEyes/config.yml"
-		set {GOLDENEYES.CONFIG::options.actionbar} to yml value "options.actionbar" from file "plugins/GoldenEyes/config.yml"
-		if yml value "plugin.prefix" from file "plugins/GoldenEyes/config.yml" is not set:
-			set yml value "plugin.prefix" from file "plugins/GoldenEyes/config.yml" to "&8[&6GoldenEyes&8]&e"
-			set yml value "plugin.debug" from file "plugins/GoldenEyes/config.yml" to false
-			set yml value "options.kick" from file "plugins/GoldenEyes/config.yml" to true
-			set yml value "options.actionbar" from file "plugins/GoldenEyes/config.yml" to true
-			set {GOLDENEYES.CONFIG::prefix} to yml value "plugin.prefix" from file "plugins/GoldenEyes/config.yml"
-			set {GOLDENEYES.CONFIG::debug} to yml value "plugin.debug" from file "plugins/GoldenEyes/config.yml"
-			set {GOLDENEYES.CONFIG::options.kick} to yml value "options.kick" from file "plugins/GoldenEyes/config.yml"
-			# Configuration Checks (Values+Enabled)
-			set yml value "checks.autoclicker.enabled" from file "plugins/GoldenEyes/config.yml" to true
-			set yml value "checks.autoclicker.maxcps" from file "plugins/GoldenEyes/config.yml" to 15
-			set yml value "checks.autoclicker.maxcpskick" from file "plugins/GoldenEyes/config.yml" to 30
-			set yml value "checks.reach.enabled" from file "plugins/GoldenEyes/config.yml" to true # Default
-			set yml value "checks.reach.maxdistance" from file "plugins/GoldenEyes/config.yml" to 4
-			set yml value "checks.fastplace.enabled" from file "plugins/GoldenEyes/config.yml" to true
-			set yml value "checks.fastplace.maxblocks" from file "plugins/GoldenEyes/config.yml" to 15
-			set yml value "checks.fastbow.enabled" from file "plugins/GoldenEyes/config.yml" to true
-			set yml value "checks.waterwalk.enabled" from file "plugins/GoldenEyes/config.yml" to true
-			set yml value "checks.autosneak.enabled" from file "plugins/GoldenEyes/config.yml" to true
-			set yml value "checks.liquidinteract.enabled" from file "plugins/GoldenEyes/config.yml" to true
-			set yml value "checks.nofall.enabled" from file "plugins/GoldenEyes/config.yml" to true
-			set yml value "checks.antikb.enabled" from file "plugins/GoldenEyes/config.yml" to true
-			set yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml" to false
-			set yml value "checks.fastladder.enabled" from file "plugins/GoldenEyes/config.yml" to false
-			set yml value "checks.badpackets.enabled" from file "plugins/GoldenEyes/config.yml" to false
-		if dir "plugins/GoldenEyes/addons" doesn't exist:
-			create directory "plugins/GoldenEyes/addons"
-		updatePluginData()
+		send "%{GOLDENEYES.CONFIG::prefix}% Fully reloaded GoldenEyes v{@VERSION}!" to {_p}
 	if {_t} is "unknowncmd":
 		send "%{GOLDENEYES.CONFIG::prefix}% Invaild Argument. Use ""/goldeneyes help"" for help." to {_p}
 		stop
@@ -864,9 +844,9 @@ function gecmd(t: text, p: player):
 		send "&8[&a-=-&8]&7&m------&8[&9Chat-Manager&8]&7&m------&8[&a-=-&8]&r" to {_p}
 		stop
 	if {_t} is "about":
-		send "&6Name&e: {@name}" to {_p}
+		send "&6Name&e: GoldenEyes" to {_p}
 		send "&6Author&e: MisterBasic" to {_p}
-		send "&6Version&e: {@version}" to {_p}
+		send "&6Version&e: {@VERSION}" to {_p}
 		send "&6Description&e: An AntiCheat that detects and blocks malicious hacks." to {_p}
 	if {_t} is "addons":
 		if getAddons() is not set:
@@ -889,7 +869,7 @@ function alert(m: text, p: player):
 					send "%{GOLDENEYES.CONFIG::prefix}% <tooltip:&c&l&nClick to Teleport><cmd:/goldeneyes teleport %{_p}%>%{_m}% &e| Ping:&c %{_p}'s ping%&e" to loop-player
 				else:
 					send "%{GOLDENEYES.CONFIG::prefix}% <tooltip:&c&l&nClick to Teleport><cmd:/goldeneyes teleport %{_p}%>%{_m}% &e| Ping:&a %{_p}'s ping%&e" to loop-player
-	send "[{@name}] %{_m}% (Ping: %{_p}'s ping%)" to console
+	send "[GoldenEyes] %{_m}% (Ping: %{_p}'s ping%)" to console
 	updatePlayerData({_p})
 function registerViolations(p: player, v: text):
 	if yml path "violations.%uuid of {_p}%.%{_v}%" in file "plugins/GoldenEyes/playerdata.yml" doesn't exist:
@@ -900,7 +880,7 @@ function staffMsg(m: text, sgtcmd: text):
 		loop-player has permission "goldeneyes.notify":
 			if {goldeneyes.notify::%loop-player%} is true:
 				send "%{GOLDENEYES.CONFIG::prefix}% <suggest command: %{_sgtccmd}%>%{_m}%" to loop-player
-	send "[{@name}] %{_m}%" to console
+	send "[GoldenEyes] %{_m}%" to console
 function gekick(m: text, p: player):
 	allowChecks() is true
 	{goldeneyes.timeonline.%{_p}%} was more than {@maxtimejoin} ago
@@ -909,16 +889,7 @@ function gekick(m: text, p: player):
 	loop all players:
 		if loop-player has permission "goldeneyes.notify" or "goldeneyes.notify.kick":
 			send "%{GOLDENEYES.CONFIG::prefix}% %{_p}% was kicked from the server. Reason: %{_m}%" to loop-player
-	send "[{@name}] %{_p}% was attempted to be kicked from the server. Reason: %{_m}%" to console
-function antiVPNHandler(p: player):
-	set {_host} to text from "http://legacy.iphub.info/api.php?ip=%ip of {_p}%&showtype=4"
-	set {_invaild.asn::*} to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	set {hostinfo::*} to {_host} split at ",""asn"":"
-	set {_host} to {_hostinfo::2}
-	replace all "}" with "" in {_host}
-	if {_info} contains {_invaild.asn::*}:
-		log "%{_p}% tried to use a VPN [%ip of {_p}%]" to "GoldenEyes/checks.log"
-		gekick("VPN", {_p})
+	send "[GoldenEyes] %{_p}% was attempted to be kicked from the server. Reason: %{_m}%" to console
 function registerViolationsHandler(p: player):
 	registerViolations({_p}, "autoclicker")
 	registerViolations({_p}, "reach")
@@ -1010,20 +981,6 @@ function resetConfig():
 	set yml value "checks.inventorycleaner.enabled" from file "plugins/GoldenEyes/config.yml" to true
 	set yml value "checks.speed.enabled" from file "plugins/GoldenEyes/config.yml" to true
 	set yml value "checks.badpackets.enabled" from file "plugins/GoldenEyes/config.yml" to true
-	set yml value "checks.antivpn.enabled" from file "plugins/GoldenEyes/config.yml" to true
-	add "ARETI-AS" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "EGIHostings" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "EGIHosting" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "anchorfree" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "Netherlands" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "NFORCE" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "Leaseweb" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "M247" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "PLI-AS" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "HostUS" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "IOMART-AS" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "WideOpenWest" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
-	add "Choopa" to yml list "checks.antivpn.blockedhosts" from file "plugins/GoldenEyes/config.yml"
 
 	set yml value "chat-manager.enabled" from file "plugins/GoldenEyes/config.yml" to false
 	add "Unicorns_and_ponies" to yml list "chat-manager.blocked-words" from file "plugins/GoldenEyes/config.yml"
@@ -1034,17 +991,17 @@ function resetConfig():
 # Send update message
 function autoUpdate(website: string):
 	send "§1>§9>§b>" to console
-	send "[{@name}] You are currently running an outdated version." to console
-	send "[{@name}] Please update to a new version: %{_website}%" to console
+	send "[GoldenEyes] You are currently running an outdated version." to console
+	send "[GoldenEyes] Please update to a new version: %{_website}%" to console
 	send "§1>§9>§b>" to console
 # AutoUpdate Handler
 function autoUpdateHandler():
-	if "{@version}" ends with "_DEV":
-		if text from "{@devversion-pastebin}" is not "{@version}":
+	if "{@VERSION}" ends with "_DEV":
+		if text from "{@devversion-pastebin}" is not "{@VERSION}":
 			set {_website} to "{@github}"
 			autoUpdate("%{_website}%")
 	else:
-		if text from "{@version-pastebin}" is not "{@version}":
+		if text from "{@VERSION-pastebin}" is not "{@VERSION}":
 			set {_website} to "https://www.spigotmc.org/resources/sk-goldeneyes-anticheat.54638/"
 			autoUpdate("%{_website}%")
 # [-=-=-=-=-=-=-=-=-=-]
